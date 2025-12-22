@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Car, Users, Clock, Check } from "lucide-react";
+import { Car, Users, Check } from "lucide-react";
+import { BookingModal } from "./BookingModal";
 
 const shuttleOptions = [
   {
@@ -38,6 +40,14 @@ const shuttleOptions = [
 ];
 
 export const ShuttleSection = () => {
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [selectedShuttle, setSelectedShuttle] = useState("");
+
+  const handleBookNow = (shuttleName: string) => {
+    setSelectedShuttle(`Airport Shuttle - ${shuttleName}`);
+    setIsBookingOpen(true);
+  };
+
   return (
     <section className="py-20 bg-background">
       <div className="container">
@@ -102,13 +112,24 @@ export const ShuttleSection = () => {
                 ))}
               </ul>
 
-              <Button variant={option.popular ? "hero" : "outline"} className="w-full">
+              <Button 
+                variant={option.popular ? "hero" : "outline"} 
+                className="w-full"
+                onClick={() => handleBookNow(option.name)}
+              >
                 Book Now
               </Button>
             </div>
           ))}
         </div>
       </div>
+
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        bookingType="shuttle"
+        preSelectedDestination={selectedShuttle}
+      />
     </section>
   );
 };
