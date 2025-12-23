@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import tpsaLogo from "@/assets/tpsa-logo.png";
 
 export const Footer = () => {
   return (
@@ -8,9 +9,11 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
           <div>
-            <h3 className="font-display text-2xl font-bold text-card mb-4">
-              touring<span className="text-primary">Places</span>
-            </h3>
+            <img 
+              src={tpsaLogo} 
+              alt="Touring Places South Africa" 
+              className="h-12 w-auto mb-4"
+            />
             <p className="text-card/70 font-body mb-6">
               Experience the thrill and excitement of touring Africa with our specially curated tours.
             </p>

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Menu, Phone, User, Globe } from "lucide-react";
 import { useState } from "react";
+import tpsaLogo from "@/assets/tpsa-logo.png";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,13 +27,12 @@ export const Header = () => {
       <nav className="container py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2">
-            <div className="relative">
-              <span className="font-display text-2xl md:text-3xl font-bold text-foreground">
-                touring
-                <span className="text-primary">Places</span>
-              </span>
-            </div>
+          <a href="/" className="flex items-center">
+            <img 
+              src={tpsaLogo} 
+              alt="Touring Places South Africa" 
+              className="h-10 md:h-12 w-auto invert"
+            />
           </a>
 
           {/* Desktop Navigation */}
