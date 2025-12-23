@@ -8,7 +8,7 @@ const shuttleOptions = [
     name: "Economy",
     type: "Sedan or similar",
     price: 700,
-    capacity: "1-3",
+    capacity: "1-2",
     features: ["Free Souvenirs", "Meet & Greet"],
     popular: false,
   },
@@ -16,7 +16,7 @@ const shuttleOptions = [
     name: "Comfort",
     type: "Compact SUV or similar",
     price: 900,
-    capacity: "1-4",
+    capacity: "1-3",
     features: ["Free Souvenirs", "Meet & Greet", "Flight Tracking"],
     popular: true,
   },
@@ -49,7 +49,7 @@ export const ShuttleSection = () => {
   };
 
   return (
-    <section className="py-20 bg-background">
+    <section id="shuttles" className="py-20 bg-background">
       <div className="container">
         <div className="text-center mb-12">
           <span className="text-primary font-semibold text-sm uppercase tracking-wider">
@@ -67,7 +67,7 @@ export const ShuttleSection = () => {
           {shuttleOptions.map((option, index) => (
             <div
               key={option.name}
-              className={`relative bg-card rounded-2xl p-6 shadow-soft hover:shadow-medium transition-all duration-500 hover:-translate-y-1 animate-fade-up ${
+              className={`relative bg-card rounded-2xl p-6 shadow-soft hover:shadow-medium transition-all duration-500 hover:-translate-y-1 animate-fade-up flex flex-col ${
                 option.popular ? "ring-2 ring-primary" : ""
               }`}
               style={{ animationDelay: `${index * 0.1}s` }}
@@ -103,7 +103,7 @@ export const ShuttleSection = () => {
                 <span>{option.capacity} passengers</span>
               </div>
 
-              <ul className="space-y-2 mb-6">
+              <ul className="space-y-2 mb-6 flex-1">
                 {option.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2 text-sm text-foreground">
                     <Check className="w-4 h-4 text-primary" />
@@ -114,7 +114,7 @@ export const ShuttleSection = () => {
 
               <Button 
                 variant={option.popular ? "hero" : "outline"} 
-                className="w-full"
+                className="w-full mt-auto"
                 onClick={() => handleBookNow(option.name)}
               >
                 Book Now

@@ -37,13 +37,21 @@ export const Footer = () => {
           <div>
             <h4 className="font-display text-lg font-semibold text-card mb-4">Quick Links</h4>
             <ul className="space-y-3">
-              {["Home", "Tours", "Shuttles", "About Us", "Contact"].map((link) => (
-                <li key={link}>
-                  <a href="#" className="text-card/70 hover:text-primary transition-colors font-body">
-                    {link}
-                  </a>
-                </li>
-              ))}
+              <li>
+                <a href="/" className="text-card/70 hover:text-primary transition-colors font-body">Home</a>
+              </li>
+              <li>
+                <a href="https://touringplaces.co.za/#tours" target="_blank" rel="noopener noreferrer" className="text-card/70 hover:text-primary transition-colors font-body">Tours</a>
+              </li>
+              <li>
+                <a href="#shuttles" className="text-card/70 hover:text-primary transition-colors font-body">Shuttles</a>
+              </li>
+              <li>
+                <a href="https://touringplaces.co.za/about-us" target="_blank" rel="noopener noreferrer" className="text-card/70 hover:text-primary transition-colors font-body">About Us</a>
+              </li>
+              <li>
+                <a href="https://touringplaces.co.za/contact" target="_blank" rel="noopener noreferrer" className="text-card/70 hover:text-primary transition-colors font-body">Contact</a>
+              </li>
             </ul>
           </div>
 
@@ -68,7 +76,8 @@ export const Footer = () => {
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-primary mt-0.5" />
                 <span className="text-card/70 font-body">
-                  123 Main Street, Cape Town, South Africa
+                  10 Elephant Lane, Century City<br />
+                  Cape Town, South Africa
                 </span>
               </li>
               <li className="flex items-center gap-3">
@@ -79,8 +88,8 @@ export const Footer = () => {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-primary" />
-                <a href="mailto:info@touringplaces.co.za" className="text-card/70 hover:text-primary transition-colors font-body">
-                  info@touringplaces.co.za
+                <a href="mailto:sales@touringplaces.co.za" className="text-card/70 hover:text-primary transition-colors font-body">
+                  sales@touringplaces.co.za
                 </a>
               </li>
             </ul>
