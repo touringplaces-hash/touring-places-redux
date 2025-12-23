@@ -37,11 +37,21 @@ export const Header = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
-            <Button variant="nav" className="text-base">Home</Button>
-            <Button variant="nav" className="text-base">Tours</Button>
-            <Button variant="nav" className="text-base">Shuttles</Button>
-            <Button variant="nav" className="text-base">About Us</Button>
-            <Button variant="nav" className="text-base">Services</Button>
+            <a href="/">
+              <Button variant="nav" className="text-base">Home</Button>
+            </a>
+            <a href="https://touringplaces.co.za/#tours" target="_blank" rel="noopener noreferrer">
+              <Button variant="nav" className="text-base">Tours</Button>
+            </a>
+            <a href="#shuttles">
+              <Button variant="nav" className="text-base">Shuttles</Button>
+            </a>
+            <a href="https://touringplaces.co.za/about-us" target="_blank" rel="noopener noreferrer">
+              <Button variant="nav" className="text-base">About Us</Button>
+            </a>
+            <a href="https://touringplaces.co.za/#tours" target="_blank" rel="noopener noreferrer">
+              <Button variant="nav" className="text-base">Services</Button>
+            </a>
           </div>
 
           {/* Actions */}
@@ -71,17 +81,19 @@ export const Header = () => {
         {mobileMenuOpen && (
           <div className="lg:hidden pt-4 pb-2 border-t border-border mt-4 animate-fade-up">
             <div className="flex flex-col gap-2">
-              <Button variant="ghost" className="justify-start">Home</Button>
-              <Button variant="ghost" className="justify-start">Tours</Button>
-              <Button variant="ghost" className="justify-start">Shuttles</Button>
-              <Button variant="ghost" className="justify-start">About Us</Button>
-              <Button variant="ghost" className="justify-start">Services</Button>
+              <a href="/"><Button variant="ghost" className="justify-start w-full">Home</Button></a>
+              <a href="https://touringplaces.co.za/#tours" target="_blank" rel="noopener noreferrer"><Button variant="ghost" className="justify-start w-full">Tours</Button></a>
+              <a href="#shuttles"><Button variant="ghost" className="justify-start w-full">Shuttles</Button></a>
+              <a href="https://touringplaces.co.za/about-us" target="_blank" rel="noopener noreferrer"><Button variant="ghost" className="justify-start w-full">About Us</Button></a>
+              <a href="https://touringplaces.co.za/#tours" target="_blank" rel="noopener noreferrer"><Button variant="ghost" className="justify-start w-full">Services</Button></a>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1 gap-2">
                   <User className="w-4 h-4" />
                   Sign in
                 </Button>
-                <Button variant="hero" className="flex-1">Contact</Button>
+                <a href="https://touringplaces.co.za/contact" target="_blank" rel="noopener noreferrer" className="flex-1">
+                  <Button variant="hero" className="w-full">Contact</Button>
+                </a>
               </div>
             </div>
           </div>
