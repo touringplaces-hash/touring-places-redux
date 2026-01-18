@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,9 @@ import {
   Mail,
   Phone,
   Users,
-  MapPin
+  MapPin,
+  LogOut,
+  Loader2
 } from "lucide-react";
 import {
   Select,
@@ -34,6 +37,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import type { Session, User } from "@supabase/supabase-js";
 
 interface Booking {
   id: string;
@@ -52,6 +56,11 @@ interface Booking {
 }
 
 const Admin = () => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +68,88 @@ const Admin = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Check authentication and admin role
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (!session) {
+          navigate("/auth");
+          return;
+        }
+
+        // Defer role check to avoid deadlock
+        if (session?.user) {
+          setTimeout(() => {
+            checkAdminRole(session.user.id);
+          }, 0);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (!session) {
+        setAuthLoading(false);
+        navigate("/auth");
+        return;
+      }
+
+      checkAdminRole(session.user.id);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const checkAdminRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error checking admin role:", error);
+        toast({
+          title: "Access Denied",
+          description: "Unable to verify admin permissions.",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
+      if (!data) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have admin privileges.",
+          variant: "destructive",
+        });
+        navigate("/");
+        return;
+      }
+
+      setIsAdmin(true);
+      setAuthLoading(false);
+    } catch (error) {
+      console.error("Error checking admin role:", error);
+      navigate("/");
+    }
+  };
 
   const fetchBookings = async () => {
+    if (!isAdmin) return;
+    
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -83,8 +172,10 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    if (isAdmin) {
+      fetchBookings();
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     let filtered = [...bookings];
@@ -140,6 +231,11 @@ const Admin = () => {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -166,6 +262,23 @@ const Admin = () => {
     }
   };
 
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not admin
+  if (!isAdmin) {
+    return null;
+  }
+
   const stats = {
     total: bookings.length,
     pending: bookings.filter((b) => b.status === "pending").length,
@@ -184,12 +297,21 @@ const Admin = () => {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </a>
-            <h1 className="font-display text-2xl font-bold">Admin Dashboard</h1>
+            <div>
+              <h1 className="font-display text-2xl font-bold">Admin Dashboard</h1>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+            </div>
           </div>
-          <Button onClick={fetchBookings} variant="outline" className="gap-2 border-card/20 text-card hover:bg-card/10">
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={fetchBookings} variant="outline" className="gap-2 border-card/20 text-card hover:bg-card/10">
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+            <Button onClick={handleLogout} variant="outline" className="gap-2 border-card/20 text-card hover:bg-card/10">
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
