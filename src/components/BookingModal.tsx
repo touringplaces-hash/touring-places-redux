@@ -56,6 +56,7 @@ export function BookingModal({ isOpen, onClose, bookingType, preSelectedDestinat
     travelDate: undefined as Date | undefined,
     numberOfTravelers: 1,
     specialRequests: "",
+    honeypot: "", // Hidden field for bot detection
   });
 
   const validateField = (field: string, value: any) => {
@@ -74,6 +75,18 @@ export function BookingModal({ isOpen, onClose, bookingType, preSelectedDestinat
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Honeypot check - bots typically fill all fields including hidden ones
+    if (formData.honeypot) {
+      // Silent rejection - pretend success to not alert bots
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+        setIsSuccess(true);
+        setBookingReference("TP-XXXXXXXX");
+      }, 1000);
+      return;
+    }
     
     // Validate all fields
     const result = bookingSchema.safeParse(formData);
@@ -150,6 +163,7 @@ export function BookingModal({ isOpen, onClose, bookingType, preSelectedDestinat
       travelDate: undefined,
       numberOfTravelers: 1,
       specialRequests: "",
+      honeypot: "",
     });
     setErrors({});
     onClose();
@@ -232,6 +246,26 @@ export function BookingModal({ isOpen, onClose, bookingType, preSelectedDestinat
               placeholder="+27 12 345 6789"
             />
           </div>
+
+          {/* Honeypot field - hidden from users, catches bots */}
+          <input
+            type="text"
+            name="website"
+            aria-hidden="true"
+            style={{ 
+              position: 'absolute',
+              left: '-9999px',
+              top: '-9999px',
+              opacity: 0,
+              height: 0,
+              width: 0,
+              pointerEvents: 'none'
+            }}
+            tabIndex={-1}
+            autoComplete="off"
+            value={formData.honeypot}
+            onChange={(e) => setFormData({ ...formData, honeypot: e.target.value })}
+          />
 
           <div className="space-y-2">
             <Label>Destination *</Label>
