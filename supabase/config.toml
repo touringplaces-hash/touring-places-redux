@@ -1,1 +1,10 @@
 project_id = "scnxekkmmjlmkterxhrp"
+
+[functions.send-booking-confirmation]
+verify_jwt = false
+
+[functions.send-contact-enquiry]
+verify_jwt = false
+
+[functions.search-flights]
+verify_jwt = false

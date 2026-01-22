@@ -62,6 +62,51 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_enquiries: {
+        Row: {
+          country_of_residence: string
+          created_at: string
+          duration: string | null
+          email_address: string
+          enquiry_type: string
+          first_names: string
+          id: string
+          number_of_persons: number | null
+          other_information: string | null
+          status: string
+          surname: string
+          travel_date: string | null
+        }
+        Insert: {
+          country_of_residence: string
+          created_at?: string
+          duration?: string | null
+          email_address: string
+          enquiry_type: string
+          first_names: string
+          id?: string
+          number_of_persons?: number | null
+          other_information?: string | null
+          status?: string
+          surname: string
+          travel_date?: string | null
+        }
+        Update: {
+          country_of_residence?: string
+          created_at?: string
+          duration?: string | null
+          email_address?: string
+          enquiry_type?: string
+          first_names?: string
+          id?: string
+          number_of_persons?: number | null
+          other_information?: string | null
+          status?: string
+          surname?: string
+          travel_date?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

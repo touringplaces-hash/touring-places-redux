@@ -1,7 +1,29 @@
 import heroImage from "@/assets/hero-cape-town.jpg";
 import { SearchForm } from "./SearchForm";
 
-export const HeroSection = () => {
+interface FlightResult {
+  id: string;
+  cityFrom: string;
+  cityTo: string;
+  price: number;
+  currency: string;
+  departureTime: number;
+  arrivalTime: number;
+  airlines: string[];
+  stops: number;
+  deepLink: string;
+  duration: {
+    total: number;
+    departure: number;
+  };
+}
+
+interface HeroSectionProps {
+  onFlightResults?: (flights: FlightResult[]) => void;
+  onSearching?: (searching: boolean) => void;
+}
+
+export const HeroSection = ({ onFlightResults, onSearching }: HeroSectionProps) => {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center pt-32 pb-20">
       {/* Background Image */}
@@ -27,7 +49,10 @@ export const HeroSection = () => {
         </div>
 
         <div className="animate-fade-up" style={{ animationDelay: "0.2s" }}>
-          <SearchForm />
+          <SearchForm 
+            onFlightResults={onFlightResults}
+            onSearching={onSearching}
+          />
         </div>
       </div>
     </section>
