@@ -72,6 +72,11 @@ const handler = async (req: Request): Promise<Response> => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Kiwi API error:", response.status, errorText);
+      
+      if (response.status === 403) {
+        throw new Error("Flight search API access denied. Please contact support to verify your API key and partner credentials with Kiwi.com.");
+      }
+      
       throw new Error(`Flight search failed: ${response.status}`);
     }
 

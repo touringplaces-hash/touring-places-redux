@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { SouthAfricaSection } from "@/components/SouthAfricaSection";
 import { DestinationsSection } from "@/components/DestinationsSection";
 import { ShuttleSection } from "@/components/ShuttleSection";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
 import { GoogleMapSection } from "@/components/GoogleMapSection";
 import { FlightResults } from "@/components/FlightResults";
@@ -48,6 +49,7 @@ const Index = () => {
         <SouthAfricaSection />
         <DestinationsSection />
         <ShuttleSection />
+        <TestimonialsSection />
         <FeaturesSection />
         <GoogleMapSection />
       </main>
