@@ -61,6 +61,9 @@ export const Footer = () => {
                   <Link to="/about" className="text-card/70 hover:text-primary transition-colors font-body">About Us</Link>
                 </li>
                 <li>
+                  <Link to="/faq" className="text-card/70 hover:text-primary transition-colors font-body">FAQ</Link>
+                </li>
+                <li>
                   <button onClick={() => setContactModalOpen(true)} className="text-card/70 hover:text-primary transition-colors font-body">Contact</button>
                 </li>
               </ul>
