@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Users, ArrowRight, Plane, Car, Map, Hotel, CalendarRange } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-type TripType = "tours" | "stays" | "flights" | "shuttles";
+export type TripType = "tours" | "stays" | "flights" | "shuttles";
 
 interface FlightResult {
   id: string;
@@ -30,10 +30,19 @@ interface FlightResult {
 interface SearchFormProps {
   onFlightResults?: (flights: FlightResult[]) => void;
   onSearching?: (searching: boolean) => void;
+  tripType?: TripType;
+  onTripTypeChange?: (tripType: TripType) => void;
 }
 
-export const SearchForm = ({ onFlightResults, onSearching }: SearchFormProps) => {
-  const [tripType, setTripType] = useState<TripType>("tours");
+export const SearchForm = ({ 
+  onFlightResults, 
+  onSearching, 
+  tripType: externalTripType,
+  onTripTypeChange 
+}: SearchFormProps) => {
+  const [internalTripType, setInternalTripType] = useState<TripType>("tours");
+  const tripType = externalTripType ?? internalTripType;
+  
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [date, setDate] = useState<Date | undefined>();
@@ -50,6 +59,14 @@ export const SearchForm = ({ onFlightResults, onSearching }: SearchFormProps) =>
     { id: "flights" as TripType, label: "Flights", icon: Plane },
     { id: "shuttles" as TripType, label: "Shuttles", icon: Car },
   ];
+
+  const handleTripTypeChange = (newType: TripType) => {
+    if (onTripTypeChange) {
+      onTripTypeChange(newType);
+    } else {
+      setInternalTripType(newType);
+    }
+  };
 
   const handleSearch = async () => {
     if (tripType === "flights") {
@@ -440,7 +457,7 @@ export const SearchForm = ({ onFlightResults, onSearching }: SearchFormProps) =>
         {tripTypes.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => setTripType(id)}
+            onClick={() => handleTripTypeChange(id)}
             className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium transition-all duration-300 ${
               tripType === id
                 ? "bg-card text-foreground shadow-soft"

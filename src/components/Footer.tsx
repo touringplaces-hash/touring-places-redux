@@ -44,7 +44,7 @@ export const Footer = () => {
               </div>
             </div>
 
-            {/* Quick Links */}
+            {/* Quick Links - Now includes Home and About Us */}
             <div>
               <h4 className="font-display text-lg font-semibold text-card mb-4">Quick Links</h4>
               <ul className="space-y-3">
@@ -52,13 +52,13 @@ export const Footer = () => {
                   <Link to="/" className="text-card/70 hover:text-primary transition-colors font-body">Home</Link>
                 </li>
                 <li>
+                  <Link to="/about" className="text-card/70 hover:text-primary transition-colors font-body">About Us</Link>
+                </li>
+                <li>
                   <button onClick={() => scrollToSection("tours")} className="text-card/70 hover:text-primary transition-colors font-body">Tours</button>
                 </li>
                 <li>
                   <button onClick={() => scrollToSection("shuttles")} className="text-card/70 hover:text-primary transition-colors font-body">Shuttles</button>
-                </li>
-                <li>
-                  <Link to="/about" className="text-card/70 hover:text-primary transition-colors font-body">About Us</Link>
                 </li>
                 <li>
                   <Link to="/faq" className="text-card/70 hover:text-primary transition-colors font-body">FAQ</Link>
