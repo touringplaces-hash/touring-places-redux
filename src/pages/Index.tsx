@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Header } from "@/components/Header";
+import { Header, TripType } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
+import { ShuttleSection } from "@/components/ShuttleSection";
 import { SouthAfricaSection } from "@/components/SouthAfricaSection";
 import { DestinationsSection } from "@/components/DestinationsSection";
-import { ShuttleSection } from "@/components/ShuttleSection";
-import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { GoogleMapSection } from "@/components/GoogleMapSection";
 import { FlightResults } from "@/components/FlightResults";
 import { Footer } from "@/components/Footer";
@@ -30,14 +30,17 @@ interface FlightResult {
 const Index = () => {
   const [flightResults, setFlightResults] = useState<FlightResult[]>([]);
   const [isSearchingFlights, setIsSearchingFlights] = useState(false);
+  const [tripType, setTripType] = useState<TripType>("tours");
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header onTripTypeChange={setTripType} activeTripType={tripType} />
       <main>
         <HeroSection 
           onFlightResults={setFlightResults} 
           onSearching={setIsSearchingFlights}
+          tripType={tripType}
+          onTripTypeChange={setTripType}
         />
         {flightResults.length > 0 && (
           <FlightResults 
@@ -46,11 +49,12 @@ const Index = () => {
             onClear={() => setFlightResults([])}
           />
         )}
+        {/* Sections rearranged: Shuttles, South Africa, Africa, Features, Testimonials */}
+        <ShuttleSection />
         <SouthAfricaSection />
         <DestinationsSection />
-        <ShuttleSection />
-        <TestimonialsSection />
         <FeaturesSection />
+        <TestimonialsSection />
         <GoogleMapSection />
       </main>
       <Footer />

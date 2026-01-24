@@ -1,14 +1,42 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Phone, User, Globe } from "lucide-react";
+import { Menu, Phone, User, Globe, Map, Hotel, Plane, Car } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import tpsaLogo from "@/assets/tpsa-logo.png";
 import { ContactModal } from "./ContactModal";
 
-export const Header = () => {
+export type TripType = "tours" | "stays" | "flights" | "shuttles";
+
+interface HeaderProps {
+  onTripTypeChange?: (tripType: TripType) => void;
+  activeTripType?: TripType;
+}
+
+export const Header = ({ onTripTypeChange, activeTripType = "tours" }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const navigate = useNavigate();
+
+  const menuItems = [
+    { id: "tours" as TripType, label: "Tours", icon: Map },
+    { id: "stays" as TripType, label: "Stays", icon: Hotel },
+    { id: "flights" as TripType, label: "Flights", icon: Plane },
+    { id: "shuttles" as TripType, label: "Shuttles", icon: Car },
+  ];
+
+  const handleMenuClick = (tripType: TripType) => {
+    setMobileMenuOpen(false);
+    if (window.location.pathname !== "/") {
+      navigate("/");
+      setTimeout(() => {
+        onTripTypeChange?.(tripType);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 100);
+    } else {
+      onTripTypeChange?.(tripType);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const scrollToSection = (sectionId: string) => {
     setMobileMenuOpen(false);
@@ -31,6 +59,12 @@ export const Header = () => {
             <span className="font-body text-card/80">exploring together</span>
             <div className="hidden md:flex items-center gap-6">
               <span className="text-card/80">24/7 Customer Support</span>
+              <Link to="/" className="text-card/80 hover:text-primary transition-colors">
+                Home
+              </Link>
+              <Link to="/about" className="text-card/80 hover:text-primary transition-colors">
+                About Us
+              </Link>
               <button 
                 onClick={() => scrollToSection("find-us")}
                 className="text-card/80 hover:text-primary transition-colors cursor-pointer"
@@ -63,26 +97,19 @@ export const Header = () => {
               />
             </Link>
 
-            {/* Desktop Navigation - Reordered: Home, Tours, Stays, Flights, Shuttles */}
-            <div className="hidden lg:flex items-center gap-8">
-              <Link to="/">
-                <Button variant="nav" className="text-base">Home</Button>
-              </Link>
-              <button onClick={() => scrollToSection("tours")}>
-                <Button variant="nav" className="text-base">Tours</Button>
-              </button>
-              <button onClick={() => scrollToSection("tours")}>
-                <Button variant="nav" className="text-base">Stays</Button>
-              </button>
-              <button onClick={() => scrollToSection("tours")}>
-                <Button variant="nav" className="text-base">Flights</Button>
-              </button>
-              <button onClick={() => scrollToSection("shuttles")}>
-                <Button variant="nav" className="text-base">Shuttles</Button>
-              </button>
-              <Link to="/about">
-                <Button variant="nav" className="text-base">About Us</Button>
-              </Link>
+            {/* Desktop Navigation - Tours, Stays, Flights, Shuttles with icons */}
+            <div className="hidden lg:flex items-center gap-6">
+              {menuItems.map(({ id, label, icon: Icon }) => (
+                <button key={id} onClick={() => handleMenuClick(id)}>
+                  <Button 
+                    variant="nav" 
+                    className={`text-base gap-2 ${activeTripType === id ? "text-primary" : ""}`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {label}
+                  </Button>
+                </button>
+              ))}
             </div>
 
             {/* Actions */}
@@ -114,11 +141,18 @@ export const Header = () => {
           {mobileMenuOpen && (
             <div className="lg:hidden pt-4 pb-2 border-t border-border mt-4 animate-fade-up">
               <div className="flex flex-col gap-2">
+                {menuItems.map(({ id, label, icon: Icon }) => (
+                  <button key={id} onClick={() => handleMenuClick(id)}>
+                    <Button 
+                      variant="ghost" 
+                      className={`justify-start w-full gap-2 ${activeTripType === id ? "text-primary" : ""}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </Button>
+                  </button>
+                ))}
                 <Link to="/"><Button variant="ghost" className="justify-start w-full" onClick={() => setMobileMenuOpen(false)}>Home</Button></Link>
-                <button onClick={() => scrollToSection("tours")}><Button variant="ghost" className="justify-start w-full">Tours</Button></button>
-                <button onClick={() => scrollToSection("tours")}><Button variant="ghost" className="justify-start w-full">Stays</Button></button>
-                <button onClick={() => scrollToSection("tours")}><Button variant="ghost" className="justify-start w-full">Flights</Button></button>
-                <button onClick={() => scrollToSection("shuttles")}><Button variant="ghost" className="justify-start w-full">Shuttles</Button></button>
                 <Link to="/about"><Button variant="ghost" className="justify-start w-full" onClick={() => setMobileMenuOpen(false)}>About Us</Button></Link>
                 <button onClick={() => scrollToSection("find-us")}><Button variant="ghost" className="justify-start w-full">How to Find Us</Button></button>
                 <div className="flex gap-2 pt-2">
