@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,12 +15,23 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+const signupSchema = loginSchema.extend({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+});
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get("mode");
+  const redirect = searchParams.get("redirect") || "/dashboard";
+  
+  const [isLogin, setIsLogin] = useState(mode !== "signup");
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string; firstName?: string; lastName?: string }>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,7 +41,7 @@ const Auth = () => {
         if (session) {
           // Defer navigation to avoid deadlock
           setTimeout(() => {
-            navigate("/admin");
+            navigate(redirect);
           }, 0);
         }
       }
@@ -39,23 +50,36 @@ const Auth = () => {
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/admin");
+        navigate(redirect);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, redirect]);
 
   const validateForm = () => {
-    const result = loginSchema.safeParse({ email, password });
-    if (!result.success) {
-      const fieldErrors: { email?: string; password?: string } = {};
-      result.error.errors.forEach((err) => {
-        if (err.path[0] === "email") fieldErrors.email = err.message;
-        if (err.path[0] === "password") fieldErrors.password = err.message;
-      });
-      setErrors(fieldErrors);
-      return false;
+    if (isLogin) {
+      const result = loginSchema.safeParse({ email, password });
+      if (!result.success) {
+        const fieldErrors: { email?: string; password?: string; firstName?: string; lastName?: string } = {};
+        result.error.errors.forEach((err) => {
+          if (err.path[0] === "email") fieldErrors.email = err.message;
+          if (err.path[0] === "password") fieldErrors.password = err.message;
+        });
+        setErrors(fieldErrors);
+        return false;
+      }
+    } else {
+      const result = signupSchema.safeParse({ email, password, firstName, lastName });
+      if (!result.success) {
+        const fieldErrors: { email?: string; password?: string; firstName?: string; lastName?: string } = {};
+        result.error.errors.forEach((err) => {
+          const field = err.path[0] as string;
+          fieldErrors[field as keyof typeof fieldErrors] = err.message;
+        });
+        setErrors(fieldErrors);
+        return false;
+      }
     }
     setErrors({});
     return true;
@@ -90,13 +114,17 @@ const Auth = () => {
 
         toast.success("Logged in successfully!");
       } else {
-        const redirectUrl = `${window.location.origin}/admin`;
+        const redirectUrl = `${window.location.origin}${redirect}`;
         
         const { error } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
           options: {
             emailRedirectTo: redirectUrl,
+            data: {
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+            },
           },
         });
 
@@ -109,7 +137,7 @@ const Auth = () => {
           return;
         }
 
-        toast.success("Account created! Please check your email to verify your account.");
+        toast.success("Account created successfully!");
       }
     } catch (error: any) {
       toast.error("An unexpected error occurred. Please try again.");
@@ -136,16 +164,51 @@ const Auth = () => {
         <Card>
           <CardHeader>
             <CardTitle className="font-display text-2xl">
-              {isLogin ? "Admin Login" : "Create Account"}
+              {isLogin ? "Welcome Back" : "Create Account"}
             </CardTitle>
             <CardDescription>
               {isLogin
-                ? "Sign in to access the admin dashboard"
-                : "Create an admin account"}
+                ? "Sign in to access your bookings and profile"
+                : "Create an account to book tours and track your trips"}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John"
+                      className={errors.firstName ? "border-destructive" : ""}
+                      disabled={isLoading}
+                    />
+                    {errors.firstName && (
+                      <p className="text-xs text-destructive">{errors.firstName}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                      className={errors.lastName ? "border-destructive" : ""}
+                      disabled={isLoading}
+                    />
+                    {errors.lastName && (
+                      <p className="text-xs text-destructive">{errors.lastName}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -153,7 +216,7 @@ const Auth = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@touringplaces.co.za"
+                  placeholder="you@example.com"
                   className={errors.email ? "border-destructive" : ""}
                   disabled={isLoading}
                 />

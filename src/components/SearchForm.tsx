@@ -139,14 +139,14 @@ export const SearchForm = ({
     if (tripType === "stays") {
       return (
         <>
-          {/* From */}
-          <div className="lg:col-span-2 relative">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">From</label>
+          {/* Where */}
+          <div className="lg:col-span-4 relative">
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Where</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
               <input
                 type="text"
-                placeholder="Your location"
+                placeholder="City or Airport"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
                 className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
@@ -154,23 +154,8 @@ export const SearchForm = ({
             </div>
           </div>
 
-          {/* To */}
-          <div className="lg:col-span-2 relative">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-              <input
-                type="text"
-                placeholder="Destination"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
-              />
-            </div>
-          </div>
-
           {/* Check-In */}
-          <div className="lg:col-span-2 relative">
+          <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Check-In</label>
             <Popover>
               <PopoverTrigger asChild>
@@ -199,7 +184,7 @@ export const SearchForm = ({
           </div>
 
           {/* Check-Out */}
-          <div className="lg:col-span-2 relative">
+          <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Check-Out</label>
             <Popover>
               <PopoverTrigger asChild>
@@ -364,7 +349,106 @@ export const SearchForm = ({
       );
     }
 
-    // Default: Tours & Shuttles
+    // Tours interface - "Where" with date range
+    if (tripType === "tours") {
+      return (
+        <>
+          {/* Where */}
+          <div className="lg:col-span-5 relative">
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Where</label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
+              <input
+                type="text"
+                placeholder="Search destinations..."
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* When - Date Range Start */}
+          <div className="lg:col-span-3 relative">
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">When</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full h-12 justify-start text-left font-normal rounded-xl bg-secondary border-2 border-transparent hover:bg-secondary/80",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="mr-2 h-5 w-5 text-primary" />
+                  {date ? format(date, "MMM dd") : "From"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  disabled={(d) => d < new Date()}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* To Date */}
+          <div className="lg:col-span-2 relative">
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full h-12 justify-start text-left font-normal rounded-xl bg-secondary border-2 border-transparent hover:bg-secondary/80",
+                    !returnDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarRange className="mr-2 h-5 w-5 text-primary" />
+                  {returnDate ? format(returnDate, "MMM dd") : "To"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={returnDate}
+                  onSelect={setReturnDate}
+                  disabled={(d) => d < (date || new Date())}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Travelers */}
+          <div className="lg:col-span-2 relative">
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Travelers</label>
+            <div className="relative">
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
+              <select
+                value={passengers}
+                onChange={(e) => setPassengers(Number(e.target.value))}
+                className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground appearance-none cursor-pointer transition-all duration-300 outline-none"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>
+                    {n} {n === 1 ? "Person" : "People"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    // Shuttles interface
     return (
       <>
         {/* From */}
@@ -374,7 +458,7 @@ export const SearchForm = ({
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
             <input
               type="text"
-              placeholder="City or airport"
+              placeholder="Pick-up location"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
               className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
@@ -389,7 +473,7 @@ export const SearchForm = ({
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
             <input
               type="text"
-              placeholder="Destination"
+              placeholder="Drop-off location"
               value={to}
               onChange={(e) => setTo(e.target.value)}
               className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
@@ -399,9 +483,7 @@ export const SearchForm = ({
 
         {/* Date */}
         <div className="lg:col-span-3 relative">
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">
-            {tripType === "tours" ? "Departure" : "Date"}
-          </label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Date</label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -430,7 +512,7 @@ export const SearchForm = ({
 
         {/* Passengers */}
         <div className="lg:col-span-2 relative">
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Travelers</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Passengers</label>
           <div className="relative">
             <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
             <select

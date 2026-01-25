@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, CheckCircle, Clock, MapPin, Star } from "lucide-react";
+import { CalendarIcon, Loader2, CheckCircle, Clock, MapPin, Star, LogIn, User } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "react-router-dom";
 
 const bookingSchema = z.object({
   customerName: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -39,6 +41,7 @@ interface TourBookingModalProps {
 }
 
 export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProps) {
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [bookingReference, setBookingReference] = useState("");
@@ -53,6 +56,18 @@ export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProp
     specialRequests: "",
     honeypot: "",
   });
+
+  // Pre-fill form with user data
+  useEffect(() => {
+    if (user && profile) {
+      setFormData(prev => ({
+        ...prev,
+        customerName: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || prev.customerName,
+        customerEmail: user.email || prev.customerEmail,
+        customerPhone: profile.phone || prev.customerPhone,
+      }));
+    }
+  }, [user, profile]);
 
   const validateField = (field: string, value: any) => {
     try {
@@ -108,6 +123,7 @@ export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProp
           travel_date: format(formData.travelDate!, "yyyy-MM-dd"),
           number_of_travelers: formData.numberOfTravelers,
           special_requests: formData.specialRequests?.trim() || null,
+          user_id: user?.id || null,
         })
         .select()
         .single();
@@ -145,9 +161,9 @@ export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProp
     setIsSuccess(false);
     setBookingReference("");
     setFormData({
-      customerName: "",
-      customerEmail: "",
-      customerPhone: "",
+      customerName: user && profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : "",
+      customerEmail: user?.email || "",
+      customerPhone: profile?.phone || "",
       travelDate: undefined,
       numberOfTravelers: 1,
       specialRequests: "",
@@ -157,12 +173,51 @@ export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProp
     onClose();
   };
 
+  // Auth required screen
+  if (!user) {
+    return (
+      <Dialog open={isOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl flex items-center gap-2">
+              <User className="w-6 h-6 text-primary" />
+              Sign In Required
+            </DialogTitle>
+          </DialogHeader>
+          
+          <p className="text-muted-foreground">
+            Please sign in or create an account to book <strong>{tour.title}</strong>.
+          </p>
+          
+          <div className="flex flex-col gap-3 mt-4">
+            <Link to={`/auth?redirect=${encodeURIComponent(window.location.pathname)}`} onClick={handleClose}>
+              <Button variant="hero" className="w-full gap-2">
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </Button>
+            </Link>
+            <Link to={`/auth?mode=signup&redirect=${encodeURIComponent(window.location.pathname)}`} onClick={handleClose}>
+              <Button variant="outline" className="w-full gap-2">
+                <User className="w-4 h-4" />
+                Create Account
+              </Button>
+            </Link>
+          </div>
+
+          <p className="text-sm text-muted-foreground text-center mt-4">
+            Creating an account lets you track your bookings and manage your profile.
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   if (isSuccess) {
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
           <div className="flex flex-col items-center text-center py-6">
-            <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+            <CheckCircle className="h-16 w-16 text-primary mb-4" />
             <DialogTitle className="text-2xl font-heading mb-2">Booking Confirmed!</DialogTitle>
             <p className="text-muted-foreground mb-4">
               Your tour to {tour.location} has been booked.
@@ -342,6 +397,7 @@ export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProp
                         }}
                         disabled={(date) => date < new Date()}
                         initialFocus
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
