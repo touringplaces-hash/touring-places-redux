@@ -1,9 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Phone, User, Globe, Map, Hotel, Plane, Car } from "lucide-react";
+import { Menu, Phone, User, Globe, Map, Hotel, Plane, Car, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import tpsaLogo from "@/assets/tpsa-logo.png";
 import { ContactModal } from "./ContactModal";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type TripType = "tours" | "stays" | "flights" | "shuttles";
 
@@ -15,7 +23,13 @@ interface HeaderProps {
 export const Header = ({ onTripTypeChange, activeTripType = "tours" }: HeaderProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   const menuItems = [
     { id: "tours" as TripType, label: "Tours", icon: Map },
@@ -77,7 +91,12 @@ export const Header = ({ onTripTypeChange, activeTripType = "tours" }: HeaderPro
               >
                 Contact Us
               </button>
-              <a href="tel:+27732373200" className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors">
+              <a 
+                href="https://wa.link/190qw7" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+              >
                 <Phone className="w-3 h-3" />
                 +27-73-237-3200
               </a>
@@ -117,12 +136,35 @@ export const Header = ({ onTripTypeChange, activeTripType = "tours" }: HeaderPro
               <Button variant="ghost" size="icon" className="text-muted-foreground">
                 <Globe className="w-5 h-5" />
               </Button>
-              <Link to="/auth">
-                <Button variant="outline" className="gap-2">
-                  <User className="w-4 h-4" />
-                  Sign in
-                </Button>
-              </Link>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <User className="w-4 h-4" />
+                      {profile?.first_name || "Account"}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-card">
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="cursor-pointer">
+                        My Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link to="/auth">
+                  <Button variant="outline" className="gap-2">
+                    <User className="w-4 h-4" />
+                    Sign in
+                  </Button>
+                </Link>
+              )}
               <Button variant="hero" onClick={() => setContactModalOpen(true)}>Contact</Button>
             </div>
 
@@ -156,12 +198,31 @@ export const Header = ({ onTripTypeChange, activeTripType = "tours" }: HeaderPro
                 <Link to="/about"><Button variant="ghost" className="justify-start w-full" onClick={() => setMobileMenuOpen(false)}>About Us</Button></Link>
                 <button onClick={() => scrollToSection("find-us")}><Button variant="ghost" className="justify-start w-full">How to Find Us</Button></button>
                 <div className="flex gap-2 pt-2">
-                  <Link to="/auth" className="flex-1">
-                    <Button variant="outline" className="w-full gap-2">
-                      <User className="w-4 h-4" />
-                      Sign in
-                    </Button>
-                  </Link>
+                  {user ? (
+                    <>
+                      <Link to="/dashboard" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full gap-2">
+                          <User className="w-4 h-4" />
+                          Dashboard
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="ghost" 
+                        className="flex-1 text-destructive" 
+                        onClick={() => { setMobileMenuOpen(false); handleSignOut(); }}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </>
+                  ) : (
+                    <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" className="w-full gap-2">
+                        <User className="w-4 h-4" />
+                        Sign in
+                      </Button>
+                    </Link>
+                  )}
                   <Button variant="hero" className="flex-1" onClick={() => { setMobileMenuOpen(false); setContactModalOpen(true); }}>
                     Contact
                   </Button>
