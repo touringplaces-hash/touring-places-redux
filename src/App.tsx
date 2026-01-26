@@ -10,6 +10,9 @@ import Auth from "./pages/Auth";
 import About from "./pages/About";
 import FAQ from "./pages/FAQ";
 import Dashboard from "./pages/Dashboard";
+import Blog from "./pages/Blog";
+import DestinationsList from "./pages/DestinationsList";
+import Destinations from "./pages/Destinations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +28,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
             <Route path="/faq" element={<FAQ />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/destinations" element={<DestinationsList />} />
+            <Route path="/destinations/:country" element={<Destinations />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/auth" element={<Auth />} />
