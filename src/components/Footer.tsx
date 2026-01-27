@@ -73,11 +73,25 @@ export const Footer = () => {
             <div>
               <h4 className="font-display text-lg font-semibold text-card mb-4">Destinations</h4>
               <ul className="space-y-3">
-                {["South Africa", "Ghana", "Kenya", "Tanzania", "Botswana"].map((link) => (
-                  <li key={link}>
-                    <button onClick={() => scrollToSection("tours")} className="text-card/70 hover:text-primary transition-colors font-body">
-                      {link}
-                    </button>
+                <li>
+                  <Link to="/destinations" className="text-card/70 hover:text-primary transition-colors font-body">All Destinations</Link>
+                </li>
+                {[
+                  { name: "South Africa", slug: "south-africa" },
+                  { name: "Kenya", slug: "kenya" },
+                  { name: "Ghana", slug: "ghana" },
+                  { name: "Tanzania", slug: "tanzania" },
+                  { name: "Botswana", slug: "botswana" },
+                  { name: "United Kingdom", slug: "united-kingdom" },
+                  { name: "UAE", slug: "uae" },
+                  { name: "Japan", slug: "japan" },
+                  { name: "China", slug: "china" },
+                  { name: "Brazil", slug: "brazil" },
+                ].map((dest) => (
+                  <li key={dest.slug}>
+                    <Link to={`/destinations/${dest.slug}`} className="text-card/70 hover:text-primary transition-colors font-body">
+                      {dest.name}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -132,7 +146,7 @@ export const Footer = () => {
           {/* Copyright */}
           <div className="border-t border-card/10 pt-8 text-center">
             <p className="text-card/50 font-body text-sm">
-              © {new Date().getFullYear()} Touring Places. All rights reserved.
+              © 2021 - 2026 Touring Places. All rights reserved.
             </p>
           </div>
         </div>
