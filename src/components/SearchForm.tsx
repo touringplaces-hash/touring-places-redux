@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Users, ArrowRight, Plane, Car, Map, Hotel, CalendarRange } from "lucide-react";
+import { Calendar, Users, ArrowRight, Plane, Car, Map, Hotel, CalendarRange } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { DestinationAutocomplete } from "@/components/DestinationAutocomplete";
 
 export type TripType = "tours" | "stays" | "flights" | "shuttles";
 
@@ -142,16 +143,12 @@ export const SearchForm = ({
           {/* Where */}
           <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Where</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-              <input
-                type="text"
-                placeholder="City or Airport"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
-              />
-            </div>
+            <DestinationAutocomplete
+              value={from}
+              onChange={setFrom}
+              placeholder="City or Airport"
+              type="destination"
+            />
           </div>
 
           {/* Check-In */}
@@ -356,16 +353,12 @@ export const SearchForm = ({
           {/* Where */}
           <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Where</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-              <input
-                type="text"
-                placeholder="Destination"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
-              />
-            </div>
+            <DestinationAutocomplete
+              value={from}
+              onChange={setFrom}
+              placeholder="Destination"
+              type="destination"
+            />
           </div>
 
           {/* When - Date Range Start */}
@@ -454,31 +447,23 @@ export const SearchForm = ({
         {/* From */}
         <div className="lg:col-span-3 relative">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">From</label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-            <input
-              type="text"
-              placeholder="Pick-up location"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
-            />
-          </div>
+          <DestinationAutocomplete
+            value={from}
+            onChange={setFrom}
+            placeholder="Pick-up location"
+            type="location"
+          />
         </div>
 
         {/* To */}
         <div className="lg:col-span-3 relative">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
-            <input
-              type="text"
-              placeholder="Drop-off location"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
-            />
-          </div>
+          <DestinationAutocomplete
+            value={to}
+            onChange={setTo}
+            placeholder="Drop-off location"
+            type="location"
+          />
         </div>
 
         {/* Date */}
