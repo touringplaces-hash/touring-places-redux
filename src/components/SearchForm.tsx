@@ -235,7 +235,7 @@ export const SearchForm = ({
       return (
         <>
           {/* From */}
-          <div className="lg:col-span-2 relative">
+          <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">From (Airport Code)</label>
             <div className="relative">
               <Plane className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
@@ -251,7 +251,7 @@ export const SearchForm = ({
           </div>
 
           {/* To */}
-          <div className="lg:col-span-2 relative">
+          <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">To (Airport Code)</label>
             <div className="relative">
               <Plane className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
@@ -325,7 +325,7 @@ export const SearchForm = ({
           </div>
 
           {/* Passengers */}
-          <div className="lg:col-span-2 relative">
+          <div className="lg:col-span-1 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Travelers</label>
             <div className="relative">
               <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
