@@ -140,7 +140,7 @@ export const SearchForm = ({
       return (
         <>
           {/* Where */}
-          <div className="lg:col-span-4 relative">
+          <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Where</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
@@ -354,13 +354,13 @@ export const SearchForm = ({
       return (
         <>
           {/* Where */}
-          <div className="lg:col-span-5 relative">
+          <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Where</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" />
               <input
                 type="text"
-                placeholder="Search destinations..."
+                placeholder="Destination"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
                 className="w-full h-12 pl-11 pr-4 rounded-xl bg-secondary border-2 border-transparent focus:border-primary focus:bg-card font-body text-foreground placeholder:text-muted-foreground transition-all duration-300 outline-none"
@@ -398,7 +398,7 @@ export const SearchForm = ({
           </div>
 
           {/* To Date */}
-          <div className="lg:col-span-2 relative">
+          <div className="lg:col-span-3 relative">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>
             <Popover>
               <PopoverTrigger asChild>
