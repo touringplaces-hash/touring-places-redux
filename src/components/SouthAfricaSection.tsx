@@ -149,12 +149,86 @@ const johannesburgTours = [
   },
 ];
 
+// Durban Tours (inspired by daytours.co.za + R250 markup)
+const durbanTours = [
+  // Full Day Tours
+  {
+    image: "https://images.unsplash.com/photo-1590523277543-a94d2e4eb00b?w=800",
+    title: "Durban City & Beaches Full Day",
+    location: "Durban, KwaZulu-Natal",
+    price: 1350,
+    rating: 4.8,
+    badge: "Full Day",
+    badgeType: "popular" as const,
+    duration: "8 hours",
+    description: "Explore Durban's Golden Mile beaches, uShaka Marine World, and the vibrant Victoria Street Market. Experience the unique blend of Zulu, Indian, and colonial heritage.",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800",
+    title: "Hluhluwe-Imfolozi Safari Full Day",
+    location: "Hluhluwe, KwaZulu-Natal",
+    price: 2450,
+    rating: 4.9,
+    badge: "Big 5 Safari",
+    badgeType: "special" as const,
+    duration: "12 hours",
+    description: "Visit Africa's oldest proclaimed game reserve. Spot the Big 5 in their natural habitat with experienced rangers. Includes game drives, lunch, and park fees.",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=800",
+    title: "Valley of 1000 Hills Full Day",
+    location: "Valley of 1000 Hills",
+    price: 1450,
+    rating: 4.8,
+    badge: "Cultural",
+    badgeType: "popular" as const,
+    duration: "7 hours",
+    description: "Discover Zulu culture in the scenic Valley of 1000 Hills. Visit a traditional Zulu village, enjoy cultural performances, and take in breathtaking valley views. Lunch included.",
+  },
+  // Half Day Tours
+  {
+    image: "https://images.unsplash.com/photo-1580063675785-1f4d1b5b8ec0?w=800",
+    title: "Durban City Half Day Tour",
+    location: "Durban Central",
+    price: 750,
+    rating: 4.7,
+    badge: "Half Day",
+    badgeType: "discount" as const,
+    duration: "4 hours",
+    description: "Explore Durban's highlights including the Golden Mile, Moses Mabhida Stadium, and the bustling Indian Quarter with its aromatic spice markets and temples.",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1590523278191-995cbcda646b?w=800",
+    title: "uShaka Marine World Half Day",
+    location: "Durban Point Waterfront",
+    price: 950,
+    rating: 4.6,
+    badge: "Half Day",
+    badgeType: "discount" as const,
+    duration: "5 hours",
+    description: "Experience one of the world's largest aquariums, meet dolphins, explore the Wet n Wild water park, and discover marine life at uShaka Marine World.",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1596178060671-7a80dc8059ea?w=800",
+    title: "Drakensberg Mountains Day Trip",
+    location: "Drakensberg, KwaZulu-Natal",
+    price: 1850,
+    rating: 4.9,
+    badge: "UNESCO Site",
+    badgeType: "special" as const,
+    duration: "10 hours",
+    description: "Journey to the majestic Drakensberg Mountains, a UNESCO World Heritage Site. Hike to ancient San rock art sites, enjoy stunning mountain scenery, and picnic lunch.",
+  },
+];
+
 export const SouthAfricaSection = () => {
   const [showAllCapeTown, setShowAllCapeTown] = useState(false);
   const [showAllJohannesburg, setShowAllJohannesburg] = useState(false);
+  const [showAllDurban, setShowAllDurban] = useState(false);
 
   const visibleCapeTownTours = showAllCapeTown ? capeTownTours : capeTownTours.slice(0, 3);
   const visibleJohannesburgTours = showAllJohannesburg ? johannesburgTours : johannesburgTours.slice(0, 3);
+  const visibleDurbanTours = showAllDurban ? durbanTours : durbanTours.slice(0, 3);
 
   return (
     <section id="tours" className="py-20 bg-secondary">
@@ -214,7 +288,7 @@ export const SouthAfricaSection = () => {
         </div>
 
         {/* Johannesburg Tours */}
-        <div>
+        <div className="mb-16">
           <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
             <span className="w-2 h-8 bg-primary rounded-full"></span>
             Johannesburg Tours
@@ -247,6 +321,47 @@ export const SouthAfricaSection = () => {
                 ) : (
                   <>
                     View More ({johannesburgTours.length - 3} more tours) <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Durban Tours */}
+        <div>
+          <h3 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+            <span className="w-2 h-8 bg-primary rounded-full"></span>
+            Durban Tours
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleDurbanTours.map((tour, index) => (
+              <div
+                key={tour.title}
+                className="animate-fade-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <TourCard {...tour} />
+              </div>
+            ))}
+          </div>
+
+          {durbanTours.length > 3 && (
+            <div className="flex justify-center mt-8">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setShowAllDurban(!showAllDurban)}
+                className="gap-2"
+              >
+                {showAllDurban ? (
+                  <>
+                    Show Less <ChevronUp className="w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    View More ({durbanTours.length - 3} more tours) <ChevronDown className="w-4 h-4" />
                   </>
                 )}
               </Button>
