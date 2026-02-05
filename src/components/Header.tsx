@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Phone, User, Globe, Map, Hotel, Plane, Car, LogOut } from "lucide-react";
+import { Menu, Phone, User, Map, Hotel, Plane, Car, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import tpsaLogo from "@/assets/tpsa-logo.png";
 import { ContactModal } from "./ContactModal";
+import { CurrencyConverter } from "./CurrencyConverter";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -132,10 +133,8 @@ export const Header = ({ onTripTypeChange, activeTripType = "tours" }: HeaderPro
             </div>
 
             {/* Actions */}
-            <div className="hidden lg:flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
-                <Globe className="w-5 h-5" />
-              </Button>
+            <div className="hidden lg:flex items-center gap-2">
+              <CurrencyConverter />
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -1,9 +1,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Car, Users, Check } from "lucide-react";
-import { BookingModal } from "./BookingModal";
+import { ShuttleBookingModal } from "./ShuttleBookingModal";
 
-const shuttleOptions = [
+interface ShuttleOption {
+  name: string;
+  type: string;
+  price: number;
+  capacity: string;
+  features: string[];
+  popular?: boolean;
+  discount?: string;
+}
+
+const shuttleOptions: ShuttleOption[] = [
   {
     name: "Economy",
     type: "Sedan or similar",
@@ -41,10 +51,10 @@ const shuttleOptions = [
 
 export const ShuttleSection = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [selectedShuttle, setSelectedShuttle] = useState("");
+  const [selectedShuttle, setSelectedShuttle] = useState<ShuttleOption | null>(null);
 
-  const handleBookNow = (shuttleName: string) => {
-    setSelectedShuttle(`Airport Shuttle - ${shuttleName}`);
+  const handleBookNow = (shuttle: ShuttleOption) => {
+    setSelectedShuttle(shuttle);
     setIsBookingOpen(true);
   };
 
@@ -115,7 +125,7 @@ export const ShuttleSection = () => {
               <Button 
                 variant={option.popular ? "hero" : "outline"} 
                 className="w-full mt-auto"
-                onClick={() => handleBookNow(option.name)}
+                onClick={() => handleBookNow(option)}
               >
                 Book Now
               </Button>
@@ -124,12 +134,16 @@ export const ShuttleSection = () => {
         </div>
       </div>
 
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        bookingType="shuttle"
-        preSelectedDestination={selectedShuttle}
-      />
+      {selectedShuttle && (
+        <ShuttleBookingModal
+          isOpen={isBookingOpen}
+          onClose={() => {
+            setIsBookingOpen(false);
+            setSelectedShuttle(null);
+          }}
+          shuttle={selectedShuttle}
+        />
+      )}
     </section>
   );
 };
