@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const bookingSchema = z.object({
   customerName: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -42,6 +43,7 @@ interface TourBookingModalProps {
 
 export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProps) {
   const { user, profile } = useAuth();
+  const { formatPrice, selectedCurrency } = useCurrency();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [bookingReference, setBookingReference] = useState("");
@@ -284,7 +286,7 @@ export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProp
                 </div>
               </div>
               <p className="font-display text-3xl font-bold text-foreground">
-                R{tour.price.toLocaleString()}
+                {formatPrice(tour.price)}
               </p>
             </div>
             
@@ -437,10 +439,10 @@ export function TourBookingModal({ isOpen, onClose, tour }: TourBookingModalProp
               <div className="bg-muted p-4 rounded-xl">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">
-                    R{tour.price.toLocaleString()} × {formData.numberOfTravelers} {formData.numberOfTravelers === 1 ? "person" : "people"}
+                    {formatPrice(tour.price)} × {formData.numberOfTravelers} {formData.numberOfTravelers === 1 ? "person" : "people"}
                   </span>
                   <span className="font-display text-xl font-bold text-foreground">
-                    R{(tour.price * formData.numberOfTravelers).toLocaleString()}
+                    {formatPrice(tour.price * formData.numberOfTravelers)}
                   </span>
                 </div>
               </div>

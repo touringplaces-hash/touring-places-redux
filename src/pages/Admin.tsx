@@ -10,10 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { 
   Search, Filter, RefreshCw, CheckCircle, Clock, XCircle, ArrowLeft, Calendar,
   Mail, Phone, Users, MapPin, LogOut, Loader2, Shield, BarChart3, Package,
-  DollarSign, TrendingUp, Eye, Pencil, Trash2, Plus, Building2, Hotel, UserCog
+  DollarSign, TrendingUp, Eye, Pencil, Trash2, Plus, Building2, Hotel, UserCog, Contact
 } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -38,6 +39,7 @@ interface Booking {
   special_requests: string | null;
   status: string;
   created_at: string;
+  user_id: string | null;
 }
 
 interface Supplier {
@@ -57,6 +59,16 @@ interface Tour {
   duration: string | null;
   is_active: boolean;
   supplier_id: string | null;
+  country: string | null;
+  city: string | null;
+  category: string | null;
+  description: string | null;
+  image_url: string | null;
+  rating: number | null;
+  badge: string | null;
+  badge_type: string | null;
+  status: string;
+  itinerary: any;
 }
 
 interface Transaction {
@@ -67,6 +79,21 @@ interface Transaction {
   status: string;
   created_at: string;
   booking_id: string | null;
+}
+
+interface CrmCustomer {
+  id: string;
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  country: string | null;
+  total_bookings: number;
+  total_spent: number;
+  last_booking_date: string | null;
+  notes: string | null;
+  tags: string[];
+  created_at: string;
 }
 
 const Admin = () => {
@@ -86,7 +113,8 @@ const Admin = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [workers, setWorkers] = useState<{ id: string; user_id: string; role: string; created_at: string; email?: string }[]>([]);
+  const [crmCustomers, setCrmCustomers] = useState<CrmCustomer[]>([]);
+  const [workers, setWorkers] = useState<{ id: string; user_id: string; role: string; created_at: string }[]>([]);
   const [newWorkerEmail, setNewWorkerEmail] = useState("");
   const [addingWorker, setAddingWorker] = useState(false);
   const [analytics, setAnalytics] = useState({ visitors: 0, pageViews: 0, avgDuration: 0 });
@@ -95,12 +123,18 @@ const Admin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [tourCountryFilter, setTourCountryFilter] = useState<string>("all");
+  const [tourStatusFilter, setTourStatusFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("bookings");
   
   // Tour form state
   const [tourDialogOpen, setTourDialogOpen] = useState(false);
-  const [tourForm, setTourForm] = useState({ 
-    title: "", location: "", description: "", price: "", duration: "", image_url: "" 
+  const [editingTour, setEditingTour] = useState<Tour | null>(null);
+  const [tourForm, setTourForm] = useState({
+    title: "", location: "", description: "", price: "", duration: "",
+    image_url: "", country: "South Africa", city: "", category: "tour",
+    badge: "", badge_type: "popular", status: "draft",
+    itinerary: "" // JSON string
   });
   const [savingTour, setSavingTour] = useState(false);
   
@@ -150,7 +184,6 @@ const Admin = () => {
         return;
       }
 
-      // Check 2FA status
       const { data: twoFAData } = await supabase
         .from("admin_2fa")
         .select("*")
@@ -162,10 +195,8 @@ const Admin = () => {
         setRequires2FA(true);
         setOtpSecret(twoFAData.totp_secret);
       } else {
-        // First time admin - need to setup 2FA
         setHas2FASetup(false);
         setRequires2FA(true);
-        // Generate new TOTP secret
         const totp = new OTPAuth.TOTP({
           issuer: "Touring Places",
           label: user?.email || "Admin",
@@ -210,18 +241,12 @@ const Admin = () => {
         return;
       }
 
-      // If setting up for first time, save to database
       if (!has2FASetup) {
         const { error } = await supabase
           .from("admin_2fa")
-          .upsert({
-            user_id: user?.id,
-            totp_secret: otpSecret,
-            is_enabled: true,
-          });
-
+          .upsert({ user_id: user?.id, totp_secret: otpSecret, is_enabled: true });
         if (error) throw error;
-        toast({ title: "2FA Enabled", description: "Two-factor authentication is now enabled for your account." });
+        toast({ title: "2FA Enabled", description: "Two-factor authentication is now enabled." });
       }
 
       setRequires2FA(false);
@@ -236,13 +261,14 @@ const Admin = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [bookingsRes, suppliersRes, toursRes, transactionsRes, analyticsRes, workersRes] = await Promise.all([
+      const [bookingsRes, suppliersRes, toursRes, transactionsRes, analyticsRes, workersRes, crmRes] = await Promise.all([
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
         supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
         supabase.from("tours").select("*").order("created_at", { ascending: false }),
         supabase.from("transactions").select("*").order("created_at", { ascending: false }),
         supabase.from("site_analytics").select("*").order("created_at", { ascending: false }).limit(1000),
         supabase.from("user_roles").select("*").eq("role", "worker").order("created_at", { ascending: false }),
+        supabase.from("crm_customers").select("*").order("created_at", { ascending: false }),
       ]);
 
       setBookings(bookingsRes.data || []);
@@ -251,6 +277,7 @@ const Admin = () => {
       setTours(toursRes.data || []);
       setTransactions(transactionsRes.data || []);
       setWorkers(workersRes.data || []);
+      setCrmCustomers(crmRes.data || []);
       
       const analyticsData = analyticsRes.data || [];
       const uniqueSessions = new Set(analyticsData.map(a => a.session_id));
@@ -264,6 +291,47 @@ const Admin = () => {
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Auto-sync CRM from bookings
+  const syncCRM = async () => {
+    try {
+      const { data: allBookings } = await supabase.from("bookings").select("*").not("user_id", "is", null);
+      if (!allBookings) return;
+
+      // Group by user_id
+      const userMap = new Map<string, { email: string; name: string; count: number; lastDate: string }>();
+      allBookings.forEach(b => {
+        if (!b.user_id) return;
+        const existing = userMap.get(b.user_id);
+        if (existing) {
+          existing.count++;
+          if (b.created_at > existing.lastDate) existing.lastDate = b.created_at;
+        } else {
+          userMap.set(b.user_id, {
+            email: b.customer_email,
+            name: b.customer_name,
+            count: 1,
+            lastDate: b.created_at,
+          });
+        }
+      });
+
+      for (const [userId, data] of userMap) {
+        await supabase.from("crm_customers").upsert({
+          user_id: userId,
+          email: data.email,
+          full_name: data.name,
+          total_bookings: data.count,
+          last_booking_date: data.lastDate,
+        }, { onConflict: "user_id" });
+      }
+
+      toast({ title: "CRM Synced", description: `Synced ${userMap.size} customers from bookings.` });
+      fetchAllData();
+    } catch (error: any) {
+      toast({ title: "Sync Error", description: error.message, variant: "destructive" });
     }
   };
 
@@ -283,6 +351,14 @@ const Admin = () => {
     setFilteredBookings(filtered);
   }, [searchTerm, statusFilter, typeFilter, bookings]);
 
+  const filteredTours = tours.filter(t => {
+    if (tourCountryFilter !== "all" && t.country !== tourCountryFilter) return false;
+    if (tourStatusFilter !== "all" && t.status !== tourStatusFilter) return false;
+    return true;
+  });
+
+  const tourCountries = [...new Set(tours.map(t => t.country).filter(Boolean))];
+
   const updateBookingStatus = async (id: string, newStatus: string) => {
     const { error } = await supabase.from("bookings").update({ status: newStatus }).eq("id", id);
     if (error) {
@@ -294,12 +370,7 @@ const Admin = () => {
   };
 
   const updateSupplierStatus = async (id: string, status: "approved" | "pending" | "rejected" | "suspended") => {
-    const updateData: { 
-      status: "approved" | "pending" | "rejected" | "suspended"; 
-      approved_at?: string | null; 
-      approved_by?: string | null 
-    } = { status };
-    
+    const updateData: any = { status };
     if (status === 'approved') {
       updateData.approved_at = new Date().toISOString();
       updateData.approved_by = user?.id || null;
@@ -307,9 +378,7 @@ const Admin = () => {
       updateData.approved_at = null;
       updateData.approved_by = null;
     }
-    
     const { error } = await supabase.from("suppliers").update(updateData).eq("id", id);
-    
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
@@ -318,23 +387,69 @@ const Admin = () => {
     toast({ title: "Updated", description: `Supplier ${status}` });
   };
 
-  const handleAddTour = async (e: React.FormEvent) => {
+  const openTourForm = (tour?: Tour) => {
+    if (tour) {
+      setEditingTour(tour);
+      setTourForm({
+        title: tour.title,
+        location: tour.location,
+        description: tour.description || "",
+        price: String(tour.price),
+        duration: tour.duration || "",
+        image_url: tour.image_url || "",
+        country: tour.country || "South Africa",
+        city: tour.city || "",
+        category: tour.category || "tour",
+        badge: tour.badge || "",
+        badge_type: tour.badge_type || "popular",
+        status: tour.status || "draft",
+        itinerary: tour.itinerary ? JSON.stringify(tour.itinerary, null, 2) : "[]",
+      });
+    } else {
+      setEditingTour(null);
+      setTourForm({
+        title: "", location: "", description: "", price: "", duration: "",
+        image_url: "", country: "South Africa", city: "", category: "tour",
+        badge: "", badge_type: "popular", status: "draft", itinerary: "[]",
+      });
+    }
+    setTourDialogOpen(true);
+  };
+
+  const handleSaveTour = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingTour(true);
     try {
-      const { error } = await supabase.from("tours").insert({
+      let parsedItinerary = [];
+      try { parsedItinerary = JSON.parse(tourForm.itinerary); } catch { parsedItinerary = []; }
+
+      const tourData = {
         title: tourForm.title.trim(),
         location: tourForm.location.trim(),
         description: tourForm.description.trim() || null,
         price: parseFloat(tourForm.price),
         duration: tourForm.duration.trim() || null,
         image_url: tourForm.image_url.trim() || null,
-        supplier_id: null, // Admin-created tour
-      });
-      if (error) throw error;
-      toast({ title: "Tour Added" });
+        country: tourForm.country || null,
+        city: tourForm.city.trim() || null,
+        category: tourForm.category || "tour",
+        badge: tourForm.badge.trim() || null,
+        badge_type: tourForm.badge_type || "popular",
+        status: tourForm.status,
+        is_active: tourForm.status === "live",
+        itinerary: parsedItinerary,
+      };
+
+      if (editingTour) {
+        const { error } = await supabase.from("tours").update(tourData).eq("id", editingTour.id);
+        if (error) throw error;
+        toast({ title: "Tour Updated" });
+      } else {
+        const { error } = await supabase.from("tours").insert({ ...tourData, supplier_id: null });
+        if (error) throw error;
+        toast({ title: "Tour Added" });
+      }
       setTourDialogOpen(false);
-      setTourForm({ title: "", location: "", description: "", price: "", duration: "", image_url: "" });
       fetchAllData();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -354,39 +469,30 @@ const Admin = () => {
     fetchAllData();
   };
 
+  const toggleTourStatus = async (tour: Tour) => {
+    const newStatus = tour.status === "live" ? "draft" : "live";
+    const { error } = await supabase.from("tours").update({ status: newStatus, is_active: newStatus === "live" }).eq("id", tour.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setTours(prev => prev.map(t => t.id === tour.id ? { ...t, status: newStatus, is_active: newStatus === "live" } : t));
+    toast({ title: `Tour ${newStatus === "live" ? "Published" : "Drafted"}` });
+  };
+
   const addWorkerRole = async () => {
     if (!newWorkerEmail.trim()) return;
     setAddingWorker(true);
     try {
-      // We need to find the user by email - look up in profiles or auth
-      // Since we can't query auth.users directly, we'll use the admin's knowledge
-      // The admin needs to know the user_id. Let's search profiles.
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .ilike("first_name", `%${newWorkerEmail}%`);
-      
-      // Also try a direct approach - if the admin enters a user_id directly
       let userId = newWorkerEmail.trim();
-      
-      // Check if it looks like an email - if so, we need user_id
       if (newWorkerEmail.includes("@")) {
-        // We can't query auth.users, so let's check if any profile exists
-        toast({ 
-          title: "Note", 
-          description: "Please enter the user's ID (UUID) from their profile. You can find this in the user's booking records.",
-          variant: "destructive" 
-        });
+        toast({ title: "Note", description: "Please enter the user's ID (UUID).", variant: "destructive" });
         setAddingWorker(false);
         return;
       }
-
-      const { error } = await supabase.from("user_roles").insert({
-        user_id: userId,
-        role: "worker" as any,
-      });
+      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "worker" as any });
       if (error) throw error;
-      toast({ title: "Worker Added", description: "Worker role assigned successfully." });
+      toast({ title: "Worker Added" });
       setNewWorkerEmail("");
       fetchAllData();
     } catch (error: any) {
@@ -414,16 +520,17 @@ const Admin = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "confirmed": case "approved":
+      case "confirmed": case "approved": case "live":
         return <Badge className="bg-green-500/10 text-green-600"><CheckCircle className="w-3 h-3 mr-1" />{status}</Badge>;
       case "cancelled": case "rejected":
         return <Badge className="bg-red-500/10 text-red-600"><XCircle className="w-3 h-3 mr-1" />{status}</Badge>;
+      case "draft":
+        return <Badge className="bg-gray-500/10 text-gray-600"><Clock className="w-3 h-3 mr-1" />{status}</Badge>;
       default:
         return <Badge className="bg-yellow-500/10 text-yellow-600"><Clock className="w-3 h-3 mr-1" />{status}</Badge>;
     }
   };
 
-  // Calculate sales stats
   const totalSales = transactions.filter(t => t.status === 'completed').reduce((sum, t) => sum + t.amount, 0);
   const pendingSales = transactions.filter(t => t.status === 'pending').reduce((sum, t) => sum + t.amount, 0);
 
@@ -435,7 +542,6 @@ const Admin = () => {
     );
   }
 
-  // 2FA Verification Screen
   if (requires2FA) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -444,36 +550,21 @@ const Admin = () => {
             <Shield className="w-12 h-12 text-primary mx-auto mb-2" />
             <CardTitle>{has2FASetup ? "Two-Factor Authentication" : "Setup 2FA"}</CardTitle>
             <CardDescription>
-              {has2FASetup 
-                ? "Enter the 6-digit code from your authenticator app" 
-                : "Scan the QR code with Google Authenticator or similar app"}
+              {has2FASetup ? "Enter the 6-digit code from your authenticator app" : "Scan the QR code with Google Authenticator"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {!has2FASetup && (
               <div className="text-center">
                 <div className="bg-white p-4 rounded-lg inline-block mb-4">
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpUri)}`}
-                    alt="2FA QR Code"
-                    className="w-48 h-48"
-                  />
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpUri)}`} alt="2FA QR Code" className="w-48 h-48" />
                 </div>
-                <p className="text-xs text-muted-foreground break-all">
-                  Manual entry: {otpSecret}
-                </p>
+                <p className="text-xs text-muted-foreground break-all">Manual entry: {otpSecret}</p>
               </div>
             )}
             <div className="space-y-2">
               <Label htmlFor="otp">Verification Code</Label>
-              <Input
-                id="otp"
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="000000"
-                className="text-center text-2xl tracking-widest"
-                maxLength={6}
-              />
+              <Input id="otp" value={otpCode} onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="000000" className="text-center text-2xl tracking-widest" maxLength={6} />
             </div>
             <Button onClick={verify2FA} className="w-full" disabled={verifying2FA}>
               {verifying2FA ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -495,7 +586,6 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-charcoal text-card py-4 px-6">
         <div className="container flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -518,19 +608,20 @@ const Admin = () => {
       </header>
 
       <main className="container py-8">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
           <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Bookings</p><p className="text-2xl font-bold">{stats.total}</p></CardContent></Card>
           <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Visitors</p><p className="text-2xl font-bold">{analytics.visitors}</p></CardContent></Card>
-          <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Page Views</p><p className="text-2xl font-bold">{analytics.pageViews}</p></CardContent></Card>
-          <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Total Sales</p><p className="text-2xl font-bold text-green-600">R{totalSales.toLocaleString()}</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Tours</p><p className="text-2xl font-bold">{tours.length}</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">CRM</p><p className="text-2xl font-bold">{crmCustomers.length}</p></CardContent></Card>
+          <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Sales</p><p className="text-2xl font-bold text-green-600">R{totalSales.toLocaleString()}</p></CardContent></Card>
           <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">Pending</p><p className="text-2xl font-bold text-yellow-600">R{pendingSales.toLocaleString()}</p></CardContent></Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="bookings" className="gap-1"><Calendar className="w-4 h-4" /><span className="hidden sm:inline">Bookings</span></TabsTrigger>
             <TabsTrigger value="tours" className="gap-1"><Package className="w-4 h-4" /><span className="hidden sm:inline">Tours</span></TabsTrigger>
+            <TabsTrigger value="crm" className="gap-1"><Contact className="w-4 h-4" /><span className="hidden sm:inline">CRM</span></TabsTrigger>
             <TabsTrigger value="suppliers" className="gap-1"><Building2 className="w-4 h-4" /><span className="hidden sm:inline">Suppliers</span></TabsTrigger>
             <TabsTrigger value="workers" className="gap-1"><UserCog className="w-4 h-4" /><span className="hidden sm:inline">Workers</span></TabsTrigger>
             <TabsTrigger value="sales" className="gap-1"><DollarSign className="w-4 h-4" /><span className="hidden sm:inline">Sales</span></TabsTrigger>
@@ -599,52 +690,212 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          {/* Tours Tab */}
+          {/* Tours Tab - Enhanced */}
           <TabsContent value="tours">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Manage Tours</CardTitle>
-                <Dialog open={tourDialogOpen} onOpenChange={setTourDialogOpen}>
-                  <Button onClick={() => setTourDialogOpen(true)} className="gap-2"><Plus className="w-4 h-4" />Add Tour</Button>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Add New Tour</DialogTitle></DialogHeader>
-                    <form onSubmit={handleAddTour} className="space-y-4">
-                      <div className="space-y-2"><Label>Title *</Label><Input value={tourForm.title} onChange={e => setTourForm({...tourForm, title: e.target.value})} required /></div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Location *</Label><Input value={tourForm.location} onChange={e => setTourForm({...tourForm, location: e.target.value})} required /></div>
-                        <div className="space-y-2"><Label>Price (ZAR) *</Label><Input type="number" value={tourForm.price} onChange={e => setTourForm({...tourForm, price: e.target.value})} required /></div>
-                      </div>
-                      <div className="space-y-2"><Label>Duration</Label><Input value={tourForm.duration} onChange={e => setTourForm({...tourForm, duration: e.target.value})} placeholder="8 hours" /></div>
-                      <div className="space-y-2"><Label>Image URL</Label><Input value={tourForm.image_url} onChange={e => setTourForm({...tourForm, image_url: e.target.value})} /></div>
-                      <div className="space-y-2"><Label>Description</Label><Textarea value={tourForm.description} onChange={e => setTourForm({...tourForm, description: e.target.value})} /></div>
-                      <Button type="submit" className="w-full" disabled={savingTour}>{savingTour ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Add Tour</Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+              <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
+                <div>
+                  <CardTitle>Manage Tours</CardTitle>
+                  <CardDescription>Create, edit, and manage all tours. Toggle live/draft status.</CardDescription>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Select value={tourCountryFilter} onValueChange={setTourCountryFilter}>
+                    <SelectTrigger className="w-[160px]"><SelectValue placeholder="All Countries" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Countries</SelectItem>
+                      {tourCountries.map(c => <SelectItem key={c} value={c!}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={tourStatusFilter} onValueChange={setTourStatusFilter}>
+                    <SelectTrigger className="w-[120px]"><SelectValue placeholder="All Status" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={() => openTourForm()} className="gap-2"><Plus className="w-4 h-4" />Add Tour</Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Image</TableHead>
                       <TableHead>Title</TableHead>
-                      <TableHead>Location</TableHead>
+                      <TableHead>Country</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Live</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tours.map(t => (
+                    {filteredTours.map(t => (
                       <TableRow key={t.id}>
-                        <TableCell className="font-medium">{t.title}</TableCell>
-                        <TableCell>{t.location}</TableCell>
-                        <TableCell>R{t.price?.toLocaleString()}</TableCell>
-                        <TableCell><Badge variant={t.is_active ? "default" : "secondary"}>{t.is_active ? "Active" : "Inactive"}</Badge></TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => deleteTour(t.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                          {t.image_url ? (
+                            <img src={t.image_url} alt={t.title} className="w-12 h-12 rounded object-cover" />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-muted flex items-center justify-center"><Package className="w-5 h-5 text-muted-foreground" /></div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">{t.title}</div>
+                          <div className="text-xs text-muted-foreground">{t.location}</div>
+                        </TableCell>
+                        <TableCell>{t.country || "N/A"}</TableCell>
+                        <TableCell>R{t.price?.toLocaleString()}</TableCell>
+                        <TableCell>{getStatusBadge(t.status)}</TableCell>
+                        <TableCell>
+                          <Switch checked={t.status === "live"} onCheckedChange={() => toggleTourStatus(t)} />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openTourForm(t)}><Pencil className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => deleteTour(t.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
+                    {filteredTours.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">No tours found.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Tour Add/Edit Dialog */}
+            <Dialog open={tourDialogOpen} onOpenChange={setTourDialogOpen}>
+              <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingTour ? "Edit Tour" : "Add New Tour"}</DialogTitle>
+                  <DialogDescription>Fill in the tour details below. Set status to "live" to publish.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSaveTour} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><Label>Title *</Label><Input value={tourForm.title} onChange={e => setTourForm({...tourForm, title: e.target.value})} required /></div>
+                    <div className="space-y-2"><Label>Location *</Label><Input value={tourForm.location} onChange={e => setTourForm({...tourForm, location: e.target.value})} required /></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2"><Label>Country</Label>
+                      <Select value={tourForm.country} onValueChange={v => setTourForm({...tourForm, country: v})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["South Africa", "Kenya", "Ghana", "Tanzania", "Botswana", "Zimbabwe", "Mozambique", "Namibia", "United Kingdom", "UAE", "Japan", "China", "Brazil"].map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2"><Label>City</Label><Input value={tourForm.city} onChange={e => setTourForm({...tourForm, city: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Category</Label>
+                      <Select value={tourForm.category} onValueChange={v => setTourForm({...tourForm, category: v})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tour">Tour</SelectItem>
+                          <SelectItem value="safari">Safari</SelectItem>
+                          <SelectItem value="adventure">Adventure</SelectItem>
+                          <SelectItem value="cultural">Cultural</SelectItem>
+                          <SelectItem value="beach">Beach</SelectItem>
+                          <SelectItem value="city">City</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2"><Label>Price (ZAR) *</Label><Input type="number" value={tourForm.price} onChange={e => setTourForm({...tourForm, price: e.target.value})} required /></div>
+                    <div className="space-y-2"><Label>Duration</Label><Input value={tourForm.duration} onChange={e => setTourForm({...tourForm, duration: e.target.value})} placeholder="8 hours" /></div>
+                    <div className="space-y-2"><Label>Status</Label>
+                      <Select value={tourForm.status} onValueChange={v => setTourForm({...tourForm, status: v})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="live">Live</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><Label>Badge</Label><Input value={tourForm.badge} onChange={e => setTourForm({...tourForm, badge: e.target.value})} placeholder="e.g. Best Seller" /></div>
+                    <div className="space-y-2"><Label>Badge Type</Label>
+                      <Select value={tourForm.badge_type} onValueChange={v => setTourForm({...tourForm, badge_type: v})}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="popular">Popular</SelectItem>
+                          <SelectItem value="special">Special</SelectItem>
+                          <SelectItem value="discount">Discount</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2"><Label>Image URL</Label><Input value={tourForm.image_url} onChange={e => setTourForm({...tourForm, image_url: e.target.value})} /></div>
+                  <div className="space-y-2"><Label>Description</Label><Textarea value={tourForm.description} onChange={e => setTourForm({...tourForm, description: e.target.value})} rows={3} /></div>
+                  <div className="space-y-2">
+                    <Label>Itinerary (JSON)</Label>
+                    <Textarea value={tourForm.itinerary} onChange={e => setTourForm({...tourForm, itinerary: e.target.value})} rows={5} placeholder='[{"day": 1, "title": "Arrival", "description": "Check in and welcome dinner"}]' className="font-mono text-sm" />
+                    <p className="text-xs text-muted-foreground">Format: JSON array of objects with day, title, description fields.</p>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={savingTour}>
+                    {savingTour ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {editingTour ? "Save Changes" : "Add Tour"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* CRM Tab */}
+          <TabsContent value="crm">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Customer Relationship Management</CardTitle>
+                  <CardDescription>All users who have booked or used services.</CardDescription>
+                </div>
+                <Button onClick={syncCRM} className="gap-2"><RefreshCw className="w-4 h-4" />Sync from Bookings</Button>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Bookings</TableHead>
+                      <TableHead>Total Spent</TableHead>
+                      <TableHead>Last Booking</TableHead>
+                      <TableHead>Tags</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {crmCustomers.map(c => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-medium">{c.full_name || "N/A"}</TableCell>
+                        <TableCell>{c.email}</TableCell>
+                        <TableCell>{c.phone || "—"}</TableCell>
+                        <TableCell>{c.total_bookings}</TableCell>
+                        <TableCell>R{(c.total_spent || 0).toLocaleString()}</TableCell>
+                        <TableCell>{c.last_booking_date ? format(new Date(c.last_booking_date), "MMM dd, yyyy") : "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 flex-wrap">
+                            {(c.tags || []).map((tag, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">{tag}</Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {crmCustomers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          No CRM data yet. Click "Sync from Bookings" to populate from existing bookings.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -697,14 +948,9 @@ const Admin = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Worker Role Management</CardTitle>
-                <CardDescription>Assign and manage worker roles. Workers can manage bookings.</CardDescription>
+                <CardDescription>Assign and manage worker roles.</CardDescription>
                 <div className="flex gap-4 mt-4">
-                  <Input
-                    placeholder="Enter user ID (UUID) to assign worker role..."
-                    value={newWorkerEmail}
-                    onChange={e => setNewWorkerEmail(e.target.value)}
-                    className="flex-1"
-                  />
+                  <Input placeholder="Enter user ID (UUID)..." value={newWorkerEmail} onChange={e => setNewWorkerEmail(e.target.value)} className="flex-1" />
                   <Button onClick={addWorkerRole} disabled={addingWorker} className="gap-2">
                     {addingWorker ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     Add Worker
@@ -728,18 +974,12 @@ const Admin = () => {
                         <TableCell><Badge className="bg-blue-500/10 text-blue-600"><UserCog className="w-3 h-3 mr-1" />worker</Badge></TableCell>
                         <TableCell>{w.created_at ? format(new Date(w.created_at), "MMM dd, yyyy") : "N/A"}</TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => removeWorkerRole(w.id)} className="text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => removeWorkerRole(w.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
                         </TableCell>
                       </TableRow>
                     ))}
                     {workers.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                          No workers assigned yet. Add a user ID above to assign the worker role.
-                        </TableCell>
-                      </TableRow>
+                      <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No workers assigned yet.</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -787,9 +1027,9 @@ const Admin = () => {
           {/* Analytics Tab */}
           <TabsContent value="analytics">
             <Card>
-              <CardHeader><CardTitle>Site Analytics</CardTitle><CardDescription>Visitor statistics and engagement metrics</CardDescription></CardHeader>
+              <CardHeader><CardTitle>Site Analytics</CardTitle><CardDescription>Visitor statistics and engagement</CardDescription></CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
                     <CardContent className="pt-6 text-center">
                       <Eye className="w-8 h-8 text-primary mx-auto mb-2" />
@@ -799,22 +1039,19 @@ const Admin = () => {
                   </Card>
                   <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
                     <CardContent className="pt-6 text-center">
-                      <BarChart3 className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                      <TrendingUp className="w-8 h-8 text-blue-500 mx-auto mb-2" />
                       <p className="text-3xl font-bold">{analytics.pageViews}</p>
                       <p className="text-sm text-muted-foreground">Page Views</p>
                     </CardContent>
                   </Card>
                   <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
                     <CardContent className="pt-6 text-center">
-                      <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                      <Clock className="w-8 h-8 text-green-500 mx-auto mb-2" />
                       <p className="text-3xl font-bold">{analytics.avgDuration}s</p>
                       <p className="text-sm text-muted-foreground">Avg. Duration</p>
                     </CardContent>
                   </Card>
                 </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Analytics data is collected from visitor sessions. More detailed analytics and graphs will be available as more data is collected.
-                </p>
               </CardContent>
             </Card>
           </TabsContent>
