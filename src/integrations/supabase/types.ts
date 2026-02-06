@@ -140,6 +140,99 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_customers: {
+        Row: {
+          country: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          last_booking_date: string | null
+          notes: string | null
+          phone: string | null
+          tags: string[] | null
+          total_bookings: number | null
+          total_spent: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          last_booking_date?: string | null
+          notes?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          total_bookings?: number | null
+          total_spent?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          last_booking_date?: string | null
+          notes?: string | null
+          phone?: string | null
+          tags?: string[] | null
+          total_bookings?: number | null
+          total_spent?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      partner_applications: {
+        Row: {
+          company_name: string
+          contact_person: string
+          created_at: string
+          description: string | null
+          email: string
+          id: string
+          operating_regions: string[] | null
+          phone: string | null
+          service_type: string
+          status: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          company_name: string
+          contact_person: string
+          created_at?: string
+          description?: string | null
+          email: string
+          id?: string
+          operating_regions?: string[] | null
+          phone?: string | null
+          service_type: string
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          company_name?: string
+          contact_person?: string
+          created_at?: string
+          description?: string | null
+          email?: string
+          id?: string
+          operating_regions?: string[] | null
+          phone?: string | null
+          service_type?: string
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -335,9 +428,11 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean | null
+          itinerary: Json | null
           location: string
           price: number
           rating: number | null
+          status: string
           supplier_id: string | null
           title: string
           updated_at: string
@@ -354,9 +449,11 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          itinerary?: Json | null
           location: string
           price: number
           rating?: number | null
+          status?: string
           supplier_id?: string | null
           title: string
           updated_at?: string
@@ -373,9 +470,11 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          itinerary?: Json | null
           location?: string
           price?: number
           rating?: number | null
+          status?: string
           supplier_id?: string | null
           title?: string
           updated_at?: string
