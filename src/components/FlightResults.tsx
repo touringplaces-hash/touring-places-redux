@@ -33,11 +33,17 @@ const formatDuration = (seconds: number) => {
 };
 
 const formatTime = (timestamp: number) => {
-  return format(new Date(timestamp * 1000), "HH:mm");
+  if (!timestamp || isNaN(timestamp)) return "--:--";
+  const date = new Date(timestamp * 1000);
+  if (isNaN(date.getTime())) return "--:--";
+  return format(date, "HH:mm");
 };
 
 const formatDate = (timestamp: number) => {
-  return format(new Date(timestamp * 1000), "EEE, MMM d");
+  if (!timestamp || isNaN(timestamp)) return "Unknown date";
+  const date = new Date(timestamp * 1000);
+  if (isNaN(date.getTime())) return "Unknown date";
+  return format(date, "EEE, MMM d");
 };
 
 export const FlightResults = ({ flights, isLoading, onClear }: FlightResultsProps) => {
