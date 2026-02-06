@@ -45,7 +45,7 @@ const Index = () => {
           tripType={tripType}
           onTripTypeChange={setTripType}
         />
-        {flightResults.length > 0 && (
+        {(flightResults.length > 0 || isSearchingFlights) && (
           <FlightResults 
             flights={flightResults} 
             isLoading={isSearchingFlights}

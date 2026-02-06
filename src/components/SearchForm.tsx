@@ -93,8 +93,8 @@ export const SearchForm = ({
             dateFrom: format(date, "dd/MM/yyyy"),
             dateTo: format(date, "dd/MM/yyyy"),
             adults: passengers,
-            returnFrom: returnDate ? format(returnDate, "dd/MM/yyyy") : undefined,
-            returnTo: returnDate ? format(returnDate, "dd/MM/yyyy") : undefined,
+            returnFrom: returnDate instanceof Date && !isNaN(returnDate.getTime()) ? format(returnDate, "dd/MM/yyyy") : undefined,
+            returnTo: returnDate instanceof Date && !isNaN(returnDate.getTime()) ? format(returnDate, "dd/MM/yyyy") : undefined,
           },
         });
 
