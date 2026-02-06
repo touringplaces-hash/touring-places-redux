@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { 
   Search, Filter, RefreshCw, CheckCircle, Clock, XCircle, ArrowLeft, Calendar,
   Mail, Phone, Users, MapPin, LogOut, Loader2, Shield, BarChart3, Package,
-  DollarSign, TrendingUp, Eye, Pencil, Trash2, Plus, Building2, Hotel
+  DollarSign, TrendingUp, Eye, Pencil, Trash2, Plus, Building2, Hotel, UserCog
 } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -86,6 +86,9 @@ const Admin = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [tours, setTours] = useState<Tour[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [workers, setWorkers] = useState<{ id: string; user_id: string; role: string; created_at: string; email?: string }[]>([]);
+  const [newWorkerEmail, setNewWorkerEmail] = useState("");
+  const [addingWorker, setAddingWorker] = useState(false);
   const [analytics, setAnalytics] = useState({ visitors: 0, pageViews: 0, avgDuration: 0 });
   
   const [loading, setLoading] = useState(true);
@@ -233,12 +236,13 @@ const Admin = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [bookingsRes, suppliersRes, toursRes, transactionsRes, analyticsRes] = await Promise.all([
+      const [bookingsRes, suppliersRes, toursRes, transactionsRes, analyticsRes, workersRes] = await Promise.all([
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
         supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
         supabase.from("tours").select("*").order("created_at", { ascending: false }),
         supabase.from("transactions").select("*").order("created_at", { ascending: false }),
         supabase.from("site_analytics").select("*").order("created_at", { ascending: false }).limit(1000),
+        supabase.from("user_roles").select("*").eq("role", "worker").order("created_at", { ascending: false }),
       ]);
 
       setBookings(bookingsRes.data || []);
@@ -246,8 +250,8 @@ const Admin = () => {
       setSuppliers(suppliersRes.data || []);
       setTours(toursRes.data || []);
       setTransactions(transactionsRes.data || []);
+      setWorkers(workersRes.data || []);
       
-      // Calculate analytics
       const analyticsData = analyticsRes.data || [];
       const uniqueSessions = new Set(analyticsData.map(a => a.session_id));
       const totalDuration = analyticsData.reduce((sum, a) => sum + (a.duration_seconds || 0), 0);
@@ -347,6 +351,59 @@ const Admin = () => {
       return;
     }
     toast({ title: "Deleted" });
+    fetchAllData();
+  };
+
+  const addWorkerRole = async () => {
+    if (!newWorkerEmail.trim()) return;
+    setAddingWorker(true);
+    try {
+      // We need to find the user by email - look up in profiles or auth
+      // Since we can't query auth.users directly, we'll use the admin's knowledge
+      // The admin needs to know the user_id. Let's search profiles.
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .ilike("first_name", `%${newWorkerEmail}%`);
+      
+      // Also try a direct approach - if the admin enters a user_id directly
+      let userId = newWorkerEmail.trim();
+      
+      // Check if it looks like an email - if so, we need user_id
+      if (newWorkerEmail.includes("@")) {
+        // We can't query auth.users, so let's check if any profile exists
+        toast({ 
+          title: "Note", 
+          description: "Please enter the user's ID (UUID) from their profile. You can find this in the user's booking records.",
+          variant: "destructive" 
+        });
+        setAddingWorker(false);
+        return;
+      }
+
+      const { error } = await supabase.from("user_roles").insert({
+        user_id: userId,
+        role: "worker" as any,
+      });
+      if (error) throw error;
+      toast({ title: "Worker Added", description: "Worker role assigned successfully." });
+      setNewWorkerEmail("");
+      fetchAllData();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setAddingWorker(false);
+    }
+  };
+
+  const removeWorkerRole = async (id: string) => {
+    if (!confirm("Remove this worker role?")) return;
+    const { error } = await supabase.from("user_roles").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Removed" });
     fetchAllData();
   };
 
@@ -471,10 +528,11 @@ const Admin = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="bookings" className="gap-1"><Calendar className="w-4 h-4" /><span className="hidden sm:inline">Bookings</span></TabsTrigger>
             <TabsTrigger value="tours" className="gap-1"><Package className="w-4 h-4" /><span className="hidden sm:inline">Tours</span></TabsTrigger>
             <TabsTrigger value="suppliers" className="gap-1"><Building2 className="w-4 h-4" /><span className="hidden sm:inline">Suppliers</span></TabsTrigger>
+            <TabsTrigger value="workers" className="gap-1"><UserCog className="w-4 h-4" /><span className="hidden sm:inline">Workers</span></TabsTrigger>
             <TabsTrigger value="sales" className="gap-1"><DollarSign className="w-4 h-4" /><span className="hidden sm:inline">Sales</span></TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1"><BarChart3 className="w-4 h-4" /><span className="hidden sm:inline">Analytics</span></TabsTrigger>
           </TabsList>
@@ -628,6 +686,61 @@ const Admin = () => {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Workers Tab */}
+          <TabsContent value="workers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Worker Role Management</CardTitle>
+                <CardDescription>Assign and manage worker roles. Workers can manage bookings.</CardDescription>
+                <div className="flex gap-4 mt-4">
+                  <Input
+                    placeholder="Enter user ID (UUID) to assign worker role..."
+                    value={newWorkerEmail}
+                    onChange={e => setNewWorkerEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={addWorkerRole} disabled={addingWorker} className="gap-2">
+                    {addingWorker ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    Add Worker
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User ID</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Assigned</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {workers.map(w => (
+                      <TableRow key={w.id}>
+                        <TableCell className="font-mono text-xs">{w.user_id}</TableCell>
+                        <TableCell><Badge className="bg-blue-500/10 text-blue-600"><UserCog className="w-3 h-3 mr-1" />worker</Badge></TableCell>
+                        <TableCell>{w.created_at ? format(new Date(w.created_at), "MMM dd, yyyy") : "N/A"}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => removeWorkerRole(w.id)} className="text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {workers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          No workers assigned yet. Add a user ID above to assign the worker role.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>

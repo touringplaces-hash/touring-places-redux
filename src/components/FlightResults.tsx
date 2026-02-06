@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Plane, Clock, X, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface FlightResult {
   id: string;
@@ -40,6 +41,8 @@ const formatDate = (timestamp: number) => {
 };
 
 export const FlightResults = ({ flights, isLoading, onClear }: FlightResultsProps) => {
+  const { formatPrice } = useCurrency();
+
   if (isLoading) {
     return (
       <section className="py-12 bg-secondary">
@@ -127,7 +130,7 @@ export const FlightResults = ({ flights, isLoading, onClear }: FlightResultsProp
                 {/* Price & Book */}
                 <div className="lg:border-l lg:pl-6 lg:min-w-[180px] flex flex-col items-center lg:items-end">
                   <p className="text-3xl font-bold text-primary">
-                    {flight.currency} {flight.price.toLocaleString()}
+                    {formatPrice(flight.price)}
                   </p>
                   <p className="text-sm text-muted-foreground mb-3">per person</p>
                   <a 

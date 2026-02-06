@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { ShuttleSection } from "@/components/ShuttleSection";
 import { SouthAfricaSection } from "@/components/SouthAfricaSection";
 import { DestinationsSection } from "@/components/DestinationsSection";
+import { AllDestinationsSection } from "@/components/AllDestinationsSection";
 import { FeaturesSection } from "@/components/FeaturesSection";
 import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { GoogleMapSection } from "@/components/GoogleMapSection";
@@ -49,10 +50,10 @@ const Index = () => {
             onClear={() => setFlightResults([])}
           />
         )}
-        {/* Sections rearranged: Shuttles, South Africa, Africa, Features, Testimonials */}
         <ShuttleSection />
         <SouthAfricaSection />
         <DestinationsSection />
+        <AllDestinationsSection />
         <FeaturesSection />
         <TestimonialsSection />
         <GoogleMapSection />
