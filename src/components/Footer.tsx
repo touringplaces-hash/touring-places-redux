@@ -64,6 +64,9 @@ export const Footer = () => {
                   <Link to="/faq" className="text-card/70 hover:text-primary transition-colors font-body">FAQ</Link>
                 </li>
                 <li>
+                  <Link to="/partner" className="text-card/70 hover:text-primary transition-colors font-body">Become a Partner</Link>
+                </li>
+                <li>
                   <button onClick={() => setContactModalOpen(true)} className="text-card/70 hover:text-primary transition-colors font-body">Contact</button>
                 </li>
               </ul>
@@ -145,6 +148,11 @@ export const Footer = () => {
 
           {/* Copyright */}
           <div className="border-t border-card/10 pt-8 text-center">
+            <div className="flex justify-center gap-6 mb-4">
+              <Link to="/terms" className="text-card/50 hover:text-primary transition-colors font-body text-sm">Terms & Conditions</Link>
+              <Link to="/privacy" className="text-card/50 hover:text-primary transition-colors font-body text-sm">Privacy Policy</Link>
+              <Link to="/partner" className="text-card/50 hover:text-primary transition-colors font-body text-sm">Become a Partner</Link>
+            </div>
             <p className="text-card/50 font-body text-sm">
               © 2021 - 2026 Touring Places. All rights reserved.
             </p>

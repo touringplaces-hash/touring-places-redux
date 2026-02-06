@@ -17,6 +17,9 @@ import Destinations from "./pages/Destinations";
 import SupplierRegister from "./pages/SupplierRegister";
 import SupplierDashboard from "./pages/SupplierDashboard";
 import WorkerDashboard from "./pages/WorkerDashboard";
+import TermsConditions from "./pages/TermsConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import BecomePartner from "./pages/BecomePartner";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +45,9 @@ const App = () => (
               <Route path="/supplier" element={<SupplierDashboard />} />
               <Route path="/supplier/register" element={<SupplierRegister />} />
               <Route path="/worker" element={<WorkerDashboard />} />
+              <Route path="/terms" element={<TermsConditions />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/partner" element={<BecomePartner />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
