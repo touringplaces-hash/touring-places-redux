@@ -67,12 +67,46 @@ export const FlightResults = ({ flights, isLoading, onClear }: FlightResultsProp
     return (
       <section className="py-12 bg-secondary">
         <div className="container">
-          <div className="flex items-center justify-center py-16">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">Searching for the best flights...</p>
-            </div>
+          <div className="mb-8">
+            <div className="h-8 w-48 bg-muted animate-pulse rounded-lg mb-2" />
+            <div className="h-4 w-72 bg-muted animate-pulse rounded-lg" />
           </div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-card rounded-2xl p-6 shadow-soft">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                      <div className="h-5 w-16 bg-muted animate-pulse rounded-full" />
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-center space-y-2">
+                        <div className="h-7 w-16 bg-muted animate-pulse rounded mx-auto" />
+                        <div className="h-4 w-12 bg-muted animate-pulse rounded mx-auto" />
+                        <div className="h-3 w-20 bg-muted animate-pulse rounded mx-auto" />
+                      </div>
+                      <div className="flex-1 flex flex-col items-center">
+                        <div className="h-3 w-16 bg-muted animate-pulse rounded mb-2" />
+                        <div className="w-full h-px bg-border" />
+                      </div>
+                      <div className="text-center space-y-2">
+                        <div className="h-7 w-16 bg-muted animate-pulse rounded mx-auto" />
+                        <div className="h-4 w-12 bg-muted animate-pulse rounded mx-auto" />
+                        <div className="h-3 w-20 bg-muted animate-pulse rounded mx-auto" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="lg:border-l lg:pl-6 lg:min-w-[180px] flex flex-col items-center lg:items-end space-y-2">
+                    <div className="h-9 w-24 bg-muted animate-pulse rounded" />
+                    <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+                    <div className="h-10 w-full lg:w-28 bg-muted animate-pulse rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-muted-foreground mt-6 animate-pulse">Searching for the best flights...</p>
         </div>
       </section>
     );
