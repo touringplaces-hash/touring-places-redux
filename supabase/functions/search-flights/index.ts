@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       adults: String(data.adults || 1),
       children: String(data.children || 0),
       infants_in_lap: String(data.infants || 0),
-      partner: "touringplacesf2",
+      partner: "touringplacestpsa",
       curr: "ZAR",
       locale: "en",
       limit: "30",

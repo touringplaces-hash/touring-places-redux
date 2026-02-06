@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { TourCard } from "@/components/TourCard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Star, Clock, Users } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Tour {
@@ -169,58 +169,34 @@ const Destinations = () => {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="bg-muted rounded-2xl h-64 mb-4" />
+                <div className="bg-muted rounded-2xl h-52 mb-4" />
                 <div className="bg-muted rounded h-6 w-3/4 mb-2" />
                 <div className="bg-muted rounded h-4 w-1/2" />
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tours.map((tour) => (
-              <div key={tour.id} className="group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-border">
-                <div className="relative h-48 overflow-hidden">
-                  <img 
-                    src={tour.image} 
-                    alt={tour.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                    <span className="font-semibold text-primary">{tour.currency} {tour.price.toLocaleString()}</span>
-                  </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-display text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
-                    {tour.name}
-                  </h3>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {tour.destination}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {tour.duration}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex items-center gap-1 text-amber-500">
-                      <Star className="w-4 h-4 fill-current" />
-                      <span className="font-medium">{tour.rating}</span>
-                    </div>
-                    <span className="text-muted-foreground text-sm">({tour.reviews.toLocaleString()} reviews)</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {tour.highlights?.slice(0, 3).map((highlight, i) => (
-                      <span key={i} className="text-xs bg-secondary px-2 py-1 rounded-full">
-                        {highlight}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {tours.map((tour, index) => (
+              <div
+                key={tour.id}
+                className="animate-fade-up"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <TourCard
+                  image={tour.image}
+                  title={tour.name}
+                  location={tour.destination}
+                  price={tour.price}
+                  rating={tour.rating}
+                  duration={tour.duration}
+                  description={tour.highlights?.join(", ")}
+                  badge={index === 0 ? "Top Pick" : undefined}
+                  badgeType="popular"
+                />
               </div>
             ))}
           </div>
