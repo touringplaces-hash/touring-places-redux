@@ -9,8 +9,10 @@ interface FlightResult {
   cityTo: string;
   price: number;
   currency: string;
-  departureTime: number;
-  arrivalTime: number;
+  departureTime: number | null;
+  arrivalTime: number | null;
+  localDeparture: string | null;
+  localArrival: string | null;
   airlines: string[];
   stops: number;
   deepLink: string;
@@ -32,18 +34,30 @@ const formatDuration = (seconds: number) => {
   return `${hours}h ${minutes}m`;
 };
 
-const formatTime = (timestamp: number) => {
-  if (!timestamp || isNaN(timestamp)) return "--:--";
-  const date = new Date(timestamp * 1000);
-  if (isNaN(date.getTime())) return "--:--";
-  return format(date, "HH:mm");
+const formatTime = (timestamp: number | null, isoString: string | null) => {
+  // Prefer ISO string from local_departure/local_arrival
+  if (isoString) {
+    const date = new Date(isoString);
+    if (!isNaN(date.getTime())) return format(date, "HH:mm");
+  }
+  // Fallback to unix timestamp
+  if (timestamp && !isNaN(timestamp)) {
+    const date = new Date(timestamp * 1000);
+    if (!isNaN(date.getTime())) return format(date, "HH:mm");
+  }
+  return "--:--";
 };
 
-const formatDate = (timestamp: number) => {
-  if (!timestamp || isNaN(timestamp)) return "Unknown date";
-  const date = new Date(timestamp * 1000);
-  if (isNaN(date.getTime())) return "Unknown date";
-  return format(date, "EEE, MMM d");
+const formatDate = (timestamp: number | null, isoString: string | null) => {
+  if (isoString) {
+    const date = new Date(isoString);
+    if (!isNaN(date.getTime())) return format(date, "EEE, MMM d");
+  }
+  if (timestamp && !isNaN(timestamp)) {
+    const date = new Date(timestamp * 1000);
+    if (!isNaN(date.getTime())) return format(date, "EEE, MMM d");
+  }
+  return "Unknown date";
 };
 
 export const FlightResults = ({ flights, isLoading, onClear }: FlightResultsProps) => {
@@ -108,9 +122,9 @@ export const FlightResults = ({ flights, isLoading, onClear }: FlightResultsProp
                   <div className="flex items-center gap-6">
                     {/* Departure */}
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-foreground">{formatTime(flight.departureTime)}</p>
+                      <p className="text-2xl font-bold text-foreground">{formatTime(flight.departureTime, flight.localDeparture)}</p>
                       <p className="text-sm text-muted-foreground">{flight.cityFrom}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(flight.departureTime)}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(flight.departureTime, flight.localDeparture)}</p>
                     </div>
 
                     {/* Duration */}
@@ -126,9 +140,9 @@ export const FlightResults = ({ flights, isLoading, onClear }: FlightResultsProp
 
                     {/* Arrival */}
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-foreground">{formatTime(flight.arrivalTime)}</p>
+                      <p className="text-2xl font-bold text-foreground">{formatTime(flight.arrivalTime, flight.localArrival)}</p>
                       <p className="text-sm text-muted-foreground">{flight.cityTo}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(flight.arrivalTime)}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(flight.arrivalTime, flight.localArrival)}</p>
                     </div>
                   </div>
                 </div>

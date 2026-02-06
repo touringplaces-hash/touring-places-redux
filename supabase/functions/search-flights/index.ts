@@ -24,29 +24,21 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const data: FlightSearchRequest = await req.json();
-    
-    // Try RateHawk/ETG API first
-    const RATEHAWK_KEY_ID = Deno.env.get("RATEHAWK_KEY_ID");
-    const RATEHAWK_API_KEY = Deno.env.get("RATEHAWK_API_KEY");
-    
-    if (RATEHAWK_KEY_ID && RATEHAWK_API_KEY) {
-      try {
-        console.log("Searching flights via RateHawk/ETG API");
-        
-        const authHeader = btoa(`${RATEHAWK_KEY_ID}:${RATEHAWK_API_KEY}`);
-        
-        // ETG doesn't have a direct flights API - it's primarily hotels
-        // Fall through to Kiwi for flights
-        console.log("RateHawk is hotel-focused, falling back to Kiwi for flights");
-      } catch (apiError) {
-        console.error("RateHawk API error:", apiError);
-      }
+
+    // Validate required fields
+    if (!data.flyFrom || !data.flyTo || !data.dateFrom) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: flyFrom, flyTo, dateFrom", success: false }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    // Use Kiwi API for flights
     const KIWI_API_KEY = Deno.env.get("KIWI_API_KEY");
     if (!KIWI_API_KEY) {
-      throw new Error("No flight search API is configured. Please add KIWI_API_KEY.");
+      return new Response(
+        JSON.stringify({ error: "Flight search is not configured. Please contact support.", success: false }),
+        { status: 503, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     const params = new URLSearchParams({
@@ -86,12 +78,31 @@ const handler = async (req: Request): Promise<Response> => {
       const errorText = await response.text();
       console.error("Kiwi API error:", response.status, errorText);
       if (response.status === 403) {
-        throw new Error("Flight search API access denied. Please contact support.");
+        return new Response(
+          JSON.stringify({ error: "Flight search API access denied. Please contact support.", success: false }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
       }
-      throw new Error(`Flight search failed: ${response.status}`);
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Too many requests. Please try again in a moment.", success: false }),
+          { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ error: `Flight search temporarily unavailable (${response.status}). Please try again.`, success: false }),
+        { status: 502, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     const flightData = await response.json();
+
+    // Log a sample raw flight to debug field names
+    if (flightData.data?.length > 0) {
+      const sample = flightData.data[0];
+      console.log("Sample flight keys:", Object.keys(sample));
+      console.log("Sample dTime:", sample.dTime, "aTime:", sample.aTime, "local_departure:", sample.local_departure, "local_arrival:", sample.local_arrival);
+    }
 
     const flights = flightData.data?.map((flight: any) => ({
       id: flight.id,
@@ -104,23 +115,28 @@ const handler = async (req: Request): Promise<Response> => {
       price: flight.price,
       currency: flightData.currency || "ZAR",
       duration: {
-        total: flight.duration?.total,
-        departure: flight.duration?.departure,
-        return: flight.duration?.return,
+        total: flight.duration?.total || 0,
+        departure: flight.duration?.departure || 0,
+        return: flight.duration?.return || 0,
       },
-      departureTime: flight.dTime,
-      arrivalTime: flight.aTime,
-      airlines: flight.airlines,
+      // Kiwi returns dTime/aTime as unix timestamps, also local_departure/local_arrival as ISO strings
+      departureTime: flight.dTime || flight.dTimeUTC || null,
+      arrivalTime: flight.aTime || flight.aTimeUTC || null,
+      localDeparture: flight.local_departure || null,
+      localArrival: flight.local_arrival || null,
+      airlines: flight.airlines || [],
       route: flight.route?.map((r: any) => ({
         flyFrom: r.flyFrom,
         flyTo: r.flyTo,
         cityFrom: r.cityFrom,
         cityTo: r.cityTo,
-        departureTime: r.dTime,
-        arrivalTime: r.aTime,
+        departureTime: r.dTime || r.dTimeUTC || null,
+        arrivalTime: r.aTime || r.aTimeUTC || null,
+        localDeparture: r.local_departure || null,
+        localArrival: r.local_arrival || null,
         airline: r.airline,
         flightNo: r.flight_no,
-      })),
+      })) || [],
       stops: flight.route?.length > 1 ? flight.route.length - 1 : 0,
       deepLink: flight.deep_link,
       bagsPrice: flight.bags_price,
@@ -136,7 +152,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in search-flights function:", error);
     return new Response(
-      JSON.stringify({ error: error.message, success: false }),
+      JSON.stringify({ error: error.message || "An unexpected error occurred", success: false }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

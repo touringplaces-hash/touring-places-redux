@@ -17,8 +17,10 @@ interface FlightResult {
   cityTo: string;
   price: number;
   currency: string;
-  departureTime: number;
-  arrivalTime: number;
+  departureTime: number | null;
+  arrivalTime: number | null;
+  localDeparture: string | null;
+  localArrival: string | null;
   airlines: string[];
   stops: number;
   deepLink: string;
