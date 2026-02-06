@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Star, MapPin, Wifi, Car, Coffee, Waves, X, ExternalLink } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Stay {
   id: string;
@@ -30,6 +31,8 @@ const amenityIcons: Record<string, React.ReactNode> = {
 };
 
 export const StaysResults = ({ stays, isLoading, onClear }: StaysResultsProps) => {
+  const { formatPrice } = useCurrency();
+
   if (stays.length === 0 && !isLoading) return null;
 
   return (
@@ -80,7 +83,7 @@ export const StaysResults = ({ stays, isLoading, onClear }: StaysResultsProps) =
                     {stay.type}
                   </div>
                   <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full font-semibold">
-                    {stay.currency} {stay.price.toLocaleString()}/night
+                    {formatPrice(stay.price)}/night
                   </div>
                 </div>
                 <div className="p-5">

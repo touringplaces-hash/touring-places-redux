@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -6,32 +5,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DollarSign, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
-const currencies = [
-  { code: "ZAR", symbol: "R", name: "South African Rand", flag: "🇿🇦" },
-  { code: "USD", symbol: "$", name: "US Dollar", flag: "🇺🇸" },
-  { code: "EUR", symbol: "€", name: "Euro", flag: "🇪🇺" },
-  { code: "GBP", symbol: "£", name: "British Pound", flag: "🇬🇧" },
-  { code: "KES", symbol: "KSh", name: "Kenyan Shilling", flag: "🇰🇪" },
-  { code: "GHS", symbol: "₵", name: "Ghanaian Cedi", flag: "🇬🇭" },
-  { code: "AED", symbol: "د.إ", name: "UAE Dirham", flag: "🇦🇪" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen", flag: "🇯🇵" },
-  { code: "CNY", symbol: "¥", name: "Chinese Yuan", flag: "🇨🇳" },
-  { code: "BRL", symbol: "R$", name: "Brazilian Real", flag: "🇧🇷" },
-];
-
-interface CurrencyConverterProps {
-  onCurrencyChange?: (currency: typeof currencies[0]) => void;
-}
-
-export function CurrencyConverter({ onCurrencyChange }: CurrencyConverterProps) {
-  const [selectedCurrency, setSelectedCurrency] = useState(currencies[0]);
-
-  const handleSelect = (currency: typeof currencies[0]) => {
-    setSelectedCurrency(currency);
-    onCurrencyChange?.(currency);
-  };
+export function CurrencyConverter() {
+  const { selectedCurrency, setSelectedCurrency, currencies } = useCurrency();
 
   return (
     <DropdownMenu>
@@ -46,7 +24,7 @@ export function CurrencyConverter({ onCurrencyChange }: CurrencyConverterProps) 
         {currencies.map((currency) => (
           <DropdownMenuItem
             key={currency.code}
-            onClick={() => handleSelect(currency)}
+            onClick={() => setSelectedCurrency(currency)}
             className={`cursor-pointer ${
               selectedCurrency.code === currency.code ? "bg-primary/10 text-primary" : ""
             }`}

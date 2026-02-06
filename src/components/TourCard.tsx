@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MapPin, Star, ArrowRight, Clock } from "lucide-react";
 import { TourBookingModal } from "./TourBookingModal";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface TourCardProps {
   image: string;
@@ -27,6 +28,7 @@ export const TourCard = ({
   description,
 }: TourCardProps) => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const { formatPrice } = useCurrency();
 
   const badgeStyles = {
     popular: "bg-primary text-primary-foreground",
@@ -83,7 +85,7 @@ export const TourCard = ({
             <div>
               <span className="text-xs text-muted-foreground">From</span>
               <p className="font-display text-xl font-bold text-foreground">
-                R{price.toLocaleString()}
+                {formatPrice(price)}
                 <span className="text-sm font-normal text-muted-foreground">/person</span>
               </p>
             </div>

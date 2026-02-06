@@ -12,85 +12,101 @@ interface StaysSearchRequest {
   guests: number;
 }
 
-// Mock stays data as fallback
-const mockStays = [
-  {
-    id: "stay-1",
-    name: "The Table Bay Hotel",
-    location: "Cape Town, South Africa",
-    price: 3500,
-    currency: "ZAR",
-    rating: 4.8,
-    reviews: 2341,
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
-    amenities: ["Pool", "Spa", "Restaurant", "Ocean View"],
-    type: "5-Star Hotel",
-  },
-  {
-    id: "stay-2",
-    name: "Singita Kruger National Park",
-    location: "Kruger National Park, South Africa",
-    price: 15000,
-    currency: "ZAR",
-    rating: 4.9,
-    reviews: 892,
-    image: "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=400",
-    amenities: ["Safari", "Pool", "Fine Dining", "Spa"],
-    type: "Luxury Safari Lodge",
-  },
-  {
-    id: "stay-3",
-    name: "One&Only Cape Town",
-    location: "V&A Waterfront, Cape Town",
-    price: 8500,
-    currency: "ZAR",
-    rating: 4.9,
-    reviews: 1567,
-    image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400",
-    amenities: ["Pool", "Spa", "Private Island", "Restaurant"],
-    type: "5-Star Resort",
-  },
-  {
-    id: "stay-4",
-    name: "Camps Bay Retreat",
-    location: "Camps Bay, Cape Town",
-    price: 4200,
-    currency: "ZAR",
-    rating: 4.7,
-    reviews: 654,
-    image: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=400",
-    amenities: ["Pool", "Mountain Views", "Breakfast", "Garden"],
-    type: "Boutique Hotel",
-  },
-  {
-    id: "stay-5",
-    name: "Saxon Hotel Johannesburg",
-    location: "Johannesburg, South Africa",
-    price: 6800,
-    currency: "ZAR",
-    rating: 4.8,
-    reviews: 1123,
-    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400",
-    amenities: ["Pool", "Spa", "Fine Dining", "Gardens"],
-    type: "5-Star Boutique",
-  },
-];
-
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const KIWI_API_KEY = Deno.env.get("KIWI_API_KEY");
     const data: StaysSearchRequest = await req.json();
-    
     console.log("Searching stays with params:", data);
 
-    // Try Kiwi API first if key is available
+    // Try RateHawk/ETG API first
+    const RATEHAWK_KEY_ID = Deno.env.get("RATEHAWK_KEY_ID");
+    const RATEHAWK_API_KEY = Deno.env.get("RATEHAWK_API_KEY");
+
+    if (RATEHAWK_KEY_ID && RATEHAWK_API_KEY) {
+      try {
+        const authHeader = btoa(`${RATEHAWK_KEY_ID}:${RATEHAWK_API_KEY}`);
+
+        // Step 1: Search for location ID
+        const locationRes = await fetch("https://api.worldota.net/api/b2b/v3/search/multicomplete/", {
+          method: "POST",
+          headers: {
+            "Authorization": `Basic ${authHeader}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: data.location,
+            language: "en",
+          }),
+        });
+
+        if (locationRes.ok) {
+          const locationData = await locationRes.json();
+          const region = locationData?.data?.regions?.[0];
+
+          if (region) {
+            // Step 2: Search for hotels
+            const searchRes = await fetch("https://api.worldota.net/api/b2b/v3/search/hp/", {
+              method: "POST",
+              headers: {
+                "Authorization": `Basic ${authHeader}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                checkin: data.checkIn,
+                checkout: data.checkOut,
+                residency: "za",
+                language: "en",
+                guests: [{ adults: data.guests }],
+                region_id: region.id,
+                currency: "ZAR",
+              }),
+            });
+
+            if (searchRes.ok) {
+              const searchData = await searchRes.json();
+              const hotels = searchData?.data?.hotels || [];
+
+              if (hotels.length > 0) {
+                const stays = hotels.slice(0, 30).map((hotel: any) => ({
+                  id: hotel.id || hotel.hid,
+                  name: hotel.name || "Hotel",
+                  location: hotel.address || data.location,
+                  price: hotel.rates?.[0]?.daily_prices?.[0] || hotel.min_price_total || 0,
+                  currency: "ZAR",
+                  rating: hotel.star_rating || 4.0,
+                  reviews: hotel.reviews?.rating_count || 0,
+                  image: hotel.images?.[0] 
+                    ? `https://photo.hotellook.com/image_v2/limit/${hotel.images[0]}/640/480.auto`
+                    : "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
+                  amenities: hotel.amenities_short?.slice(0, 4) || [],
+                  type: hotel.kind || "Hotel",
+                  deepLink: null,
+                  ratehawkId: hotel.id || hotel.hid,
+                }));
+
+                return new Response(
+                  JSON.stringify({ success: true, stays, source: "ratehawk" }),
+                  { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+                );
+              }
+            } else {
+              const errText = await searchRes.text();
+              console.error("RateHawk search error:", searchRes.status, errText);
+            }
+          }
+        }
+      } catch (apiError) {
+        console.error("RateHawk API error, falling back:", apiError);
+      }
+    }
+
+    // Fallback: Try Kiwi API
+    const KIWI_API_KEY = Deno.env.get("KIWI_API_KEY");
     if (KIWI_API_KEY) {
       try {
-        // Kiwi uses the locations API to get location IDs first
         const locationParams = new URLSearchParams({
           term: data.location,
           location_types: "city,airport",
@@ -99,11 +115,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         const locationResponse = await fetch(
           `https://api.tequila.kiwi.com/locations/query?${locationParams.toString()}`,
-          {
-            headers: {
-              "apikey": KIWI_API_KEY,
-            },
-          }
+          { headers: { "apikey": KIWI_API_KEY } }
         );
 
         if (locationResponse.ok) {
@@ -111,7 +123,6 @@ const handler = async (req: Request): Promise<Response> => {
           const locationId = locationData.locations?.[0]?.id;
 
           if (locationId) {
-            // Search for hotels using the location
             const staysParams = new URLSearchParams({
               location_id: locationId,
               checkin: data.checkIn,
@@ -124,17 +135,12 @@ const handler = async (req: Request): Promise<Response> => {
 
             const staysResponse = await fetch(
               `https://api.tequila.kiwi.com/stays/search?${staysParams.toString()}`,
-              {
-                headers: {
-                  "apikey": KIWI_API_KEY,
-                },
-              }
+              { headers: { "apikey": KIWI_API_KEY } }
             );
 
             if (staysResponse.ok) {
               const staysData = await staysResponse.json();
-              
-              if (staysData.results && staysData.results.length > 0) {
+              if (staysData.results?.length > 0) {
                 const stays = staysData.results.map((stay: any) => ({
                   id: stay.id,
                   name: stay.name,
@@ -157,26 +163,29 @@ const handler = async (req: Request): Promise<Response> => {
             }
           }
         }
-      } catch (apiError) {
-        console.error("Kiwi API error, falling back to mock data:", apiError);
+      } catch (e) {
+        console.error("Kiwi fallback error:", e);
       }
     }
 
-    // Fallback to mock data
-    console.log("Using mock stays data");
-    const filteredStays = mockStays.filter(stay => 
-      stay.location.toLowerCase().includes(data.location.toLowerCase()) ||
-      stay.name.toLowerCase().includes(data.location.toLowerCase())
-    );
+    // Final fallback: mock data
+    const mockStays = [
+      { id: "stay-1", name: "The Table Bay Hotel", location: "Cape Town, South Africa", price: 3500, currency: "ZAR", rating: 4.8, reviews: 2341, image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400", amenities: ["Pool", "Spa", "Restaurant", "Ocean View"], type: "5-Star Hotel" },
+      { id: "stay-2", name: "Singita Kruger National Park", location: "Kruger National Park, South Africa", price: 15000, currency: "ZAR", rating: 4.9, reviews: 892, image: "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=400", amenities: ["Safari", "Pool", "Fine Dining", "Spa"], type: "Luxury Safari Lodge" },
+      { id: "stay-3", name: "One&Only Cape Town", location: "V&A Waterfront, Cape Town", price: 8500, currency: "ZAR", rating: 4.9, reviews: 1567, image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400", amenities: ["Pool", "Spa", "Private Island", "Restaurant"], type: "5-Star Resort" },
+      { id: "stay-4", name: "Camps Bay Retreat", location: "Camps Bay, Cape Town", price: 4200, currency: "ZAR", rating: 4.7, reviews: 654, image: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=400", amenities: ["Pool", "Mountain Views", "Breakfast", "Garden"], type: "Boutique Hotel" },
+      { id: "stay-5", name: "Saxon Hotel Johannesburg", location: "Johannesburg, South Africa", price: 6800, currency: "ZAR", rating: 4.8, reviews: 1123, image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400", amenities: ["Pool", "Spa", "Fine Dining", "Gardens"], type: "5-Star Boutique" },
+    ];
 
+    console.log("Using mock stays data");
+    const filteredStays = mockStays.filter(s =>
+      s.location.toLowerCase().includes(data.location.toLowerCase()) ||
+      s.name.toLowerCase().includes(data.location.toLowerCase())
+    );
     const results = filteredStays.length > 0 ? filteredStays : mockStays;
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        stays: results.slice(0, 30),
-        source: "mock" 
-      }),
+      JSON.stringify({ success: true, stays: results.slice(0, 30), source: "mock" }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
